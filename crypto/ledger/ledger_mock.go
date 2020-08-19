@@ -10,7 +10,7 @@ import (
 
 	secp256k1 "github.com/tendermint/btcd/btcec"
 	"github.com/tendermint/tendermint/crypto"
-	tmsecp256k1 "github.com/tendermint/tendermint/crypto/secp256k1"
+	csecp256k1 "github.com/tendermint/tendermint/crypto/secp256k1"
 
 	bip39 "github.com/cosmos/go-bip39"
 
@@ -77,7 +77,7 @@ func (mock LedgerSECP256K1Mock) GetAddressPubKeySECP256K1(derivationPath []uint3
 		return nil, "", fmt.Errorf("error parsing public key: %v", err)
 	}
 
-	compressedPublicKey := make(tmsecp256k1.PubKey, tmsecp256k1.PubKeySize)
+	compressedPublicKey := make(csecp256k1.PubKey, csecp256k1.PubKeySize)
 	copy(compressedPublicKey, cmp.SerializeCompressed())
 
 	// Generate the bech32 addr using existing tmcrypto/etc.
