@@ -65,6 +65,8 @@ func (k msgServer) Send(goCtx context.Context, msg *types.MsgSend) (*types.MsgSe
 		),
 	)
 
+	ctx.EventManager().EmitTypedEvent(msg)
+
 	return &types.MsgSendResponse{}, nil
 }
 

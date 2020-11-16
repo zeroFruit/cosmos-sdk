@@ -255,6 +255,22 @@ func (s *IntegrationTestSuite) TestCLIQueryTxCmd() {
 				s.Require().NoError(val.ClientCtx.JSONMarshaler.UnmarshalJSON(out.Bytes(), &result))
 				s.Require().NotNil(result.Height)
 				s.Require().Contains(result.RawLog, tc.rawLogContains)
+
+				var args2 []string
+				args2 = append(args2, fmt.Sprintf("--events=%s", fmt.Sprintf("%s.%s=%s", "cosmos_bank_v1beta1_MsgSend", []byte("from"), val.Address)))
+
+				fmt.Println("args2::", args2)
+				out2, err := clitestutil.ExecTestCLICmd(clientCtx, authcli.QueryTxsByEventsCmd(), args2)
+
+				fmt.Println(out2, err)
+
+				var args3 []string
+				args3 = append(args3, fmt.Sprintf("--events=%s", fmt.Sprintf("%s.%s=%s", "message", "sender", val.Address)))
+
+				fmt.Println("args3::", args3)
+				out3, err := clitestutil.ExecTestCLICmd(clientCtx, authcli.QueryTxsByEventsCmd(), args3)
+
+				fmt.Println(out3, err)
 			}
 		})
 	}

@@ -11,6 +11,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	testdata "github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
 type eventsTestSuite struct {
@@ -86,9 +87,15 @@ func (s *eventsTestSuite) TestEventManagerTypedEvents() {
 		Animal: animal,
 	}
 
+	msgSend := types.MsgSend{
+		FromAddress: "from",
+		ToAddress: "to",
+	}
+
 	s.Require().NoError(em.EmitTypedEvents(&coin))
 	s.Require().NoError(em.EmitTypedEvent(&hasAnimal))
-	s.Require().Len(em.Events(), 2)
+	s.Require().NoError(em.EmitTypedEvent(&msgSend))
+	s.Require().Len(em.Events(), 3)
 
 	msg1, err := sdk.ParseTypedEvent(em.Events().ToABCIEvents()[0])
 	s.Require().NoError(err)
