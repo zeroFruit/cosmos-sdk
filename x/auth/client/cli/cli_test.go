@@ -257,7 +257,7 @@ func (s *IntegrationTestSuite) TestCLIQueryTxCmd() {
 				s.Require().Contains(result.RawLog, tc.rawLogContains)
 
 				var args2 []string
-				args2 = append(args2, fmt.Sprintf("--events=%s", fmt.Sprintf("%s.%s=%s", "cosmos_bank_v1beta1_MsgSend", []byte("from"), val.Address)))
+				args2 = append(args2, fmt.Sprintf("--events=%s", fmt.Sprintf("%s.%s=%s", "cosmos-bank-v1beta1-MsgSend", "from_address", val.Address)))
 
 				fmt.Println("args2::", args2)
 				out2, err := clitestutil.ExecTestCLICmd(clientCtx, authcli.QueryTxsByEventsCmd(), args2)

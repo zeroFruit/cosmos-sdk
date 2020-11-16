@@ -7,12 +7,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/gogo/protobuf/jsonpb"
-	proto "github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
+
+	"github.com/cosmos/cosmos-sdk/codec"
 )
 
 var (
@@ -98,7 +99,7 @@ func TypedEventToEvent(tev proto.Message) (Event, error) {
 	for k, v := range attrMap {
 		attrs = append(attrs, abci.EventAttribute{
 			Key:   []byte(k),
-			Value: v,
+			Value: []byte(strings.ReplaceAll(string(v), "\"", "")),
 		})
 	}
 
