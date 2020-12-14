@@ -104,7 +104,7 @@ func (d Client) ConstructionMetadataFromOptions(ctx context.Context, options map
 		return nil, rosetta.WrapError(rosetta.ErrBadArgument, "bad address")
 	}
 	addrString := addr.(string)
-	accRes, err := d.getAccount(ctx, addrString)
+	accRes, err := d.getAccount(ctx, nil, addrString)
 	if err != nil {
 		return nil, err
 	}
@@ -131,19 +131,6 @@ func (d Client) ConstructionMetadataFromOptions(ctx context.Context, options map
 		GasKey:           gas,
 		OptionMemo:       memo,
 	}, nil
-}
-
-func (d Client) getAccount(ctx context.Context, address string) (auth.Account, error) {
-	sdkAddr, err := sdk.AccAddressFromBech32(address)
-	if err != nil {
-		return nil, rosetta.WrapError(rosetta.ErrInvalidAddress, err.Error())
-	}
-	var acc auth.Account
-	err = d.do(ctx, "auth/accounts/"+sdkAddr.String(), nil, nil, &acc)
-	if err != nil {
-		return nil, rosetta.WrapError(rosetta.ErrUnknown, err.Error())
-	}
-	return acc, nil
 }
 
 func (d Client) SignedTx(ctx context.Context, txBytes []byte, sigs []*types.Signature) (signedTxBytes []byte, err error) {

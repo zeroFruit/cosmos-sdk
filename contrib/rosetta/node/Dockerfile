@@ -26,7 +26,6 @@ COPY ./contrib/rosetta/configuration ./
 RUN chmod +x run_tests.sh
 RUN chmod +x send_funds.sh
 RUN chmod +x faucet.py
-RUN chmod +x entrypoint_rest.sh
 
 WORKDIR /root/
 COPY --from=build /node/root ./

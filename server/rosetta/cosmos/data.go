@@ -1,17 +1,14 @@
 package cosmos
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/cosmos/cosmos-sdk/server/rosetta"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"strconv"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/supply"
+	"github.com/tendermint/tendermint/rpc/client"
 )
 
 func (d Client) Balances(ctx context.Context, address string, height *int64) (amounts []*types.Amount, err error) {
@@ -32,69 +29,67 @@ func (d Client) Balances(ctx context.Context, address string, height *int64) (am
 	return
 }
 
-func (d Client) do(ctx context.Context, path string, height *int64, req interface{}, resp interface{}) error {
-	u := fmt.Sprintf("%s/%s", d.lcd, path)
+func (d Client) doABCI(ctx context.Context, height *int64, path string, req interface{}, resp interface{}) error {
+	abciQuery := client.ABCIQueryOptions{
+		Prove: true,
+	}
 	if height != nil {
-		u += "?height=" + strconv.FormatInt(*height, 10)
+		abciQuery.Height = *height
 	}
 
-	// in case a body is provided then marshal it and use it as replace io.Reader
-	// otherwise the body will be nil and ignored by the request doer
-	var body io.Reader = nil
-	if req != nil {
-		reqBody, err := d.cdc.MarshalJSON(req)
-		if err != nil {
-			return rosetta.WrapError(rosetta.ErrCodec, err.Error())
-		}
-		body = bytes.NewBuffer(reqBody)
-	}
-
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, u, body)
-	if err != nil {
-		return rosetta.WrapError(rosetta.ErrUnknown, err.Error())
-	}
-	httpResp, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		return rosetta.WrapError(rosetta.ErrUnknown, err.Error())
-	}
-	defer httpResp.Body.Close()
-
-	rawBody, err := ioutil.ReadAll(httpResp.Body)
-	if err != nil {
-		return rosetta.WrapError(rosetta.ErrUnknown, err.Error())
-	}
-
-	var x map[string]json.RawMessage
-	err = d.cdc.UnmarshalJSON(rawBody, &x)
+	b, err := d.cdc.MarshalJSON(req)
 	if err != nil {
 		return rosetta.WrapError(rosetta.ErrCodec, err.Error())
 	}
 
-	queryResult, ok := x["result"]
-	if !ok {
-		return rosetta.WrapError(rosetta.ErrCodec, "result missing from query response")
+	result, err := d.tm.ABCIQueryWithOptions(path, b, abciQuery)
+	if err != nil {
+		return rosetta.WrapError(rosetta.ErrUnknown, err.Error())
 	}
-	err = d.cdc.UnmarshalJSON(queryResult, resp)
+
+	if !result.Response.IsOK() {
+		return rosetta.WrapError(rosetta.ErrUnknown, result.Response.Log)
+	}
+	err = d.cdc.UnmarshalJSON(result.Response.Value, resp)
+	if err != nil {
+		return rosetta.WrapError(rosetta.ErrCodec, err.Error())
+	}
+
 	return nil
 }
 
-func (d Client) balance(ctx context.Context, address string, height *int64) (coins sdk.Coins, err error) {
-	const path = "bank/balances"
+func (d Client) getAccount(ctx context.Context, height *int64, address string) (auth.Account, error) {
+	const path = "custom/" + auth.QuerierRoute + "/" + auth.QueryAccount
 	sdkAddr, err := sdk.AccAddressFromBech32(address)
 	if err != nil {
-		return nil, rosetta.WrapError(rosetta.ErrBadArgument, err.Error())
+		return nil, rosetta.WrapError(rosetta.ErrInvalidAddress, err.Error())
 	}
-	queryPath := fmt.Sprintf("%s/%s", path, sdkAddr.String())
-	err = d.do(ctx, queryPath, height, nil, &coins)
-	return
+	params := auth.NewQueryAccountParams(sdkAddr)
+	var acc auth.Account
+	err = d.doABCI(ctx, height, path, params, &acc)
+	if err != nil {
+		return nil, rosetta.WrapError(rosetta.ErrUnknown, err.Error())
+	}
+	return acc, nil
+}
+
+func (d Client) balance(ctx context.Context, address string, height *int64) (coins sdk.Coins, err error) {
+	acc, err := d.getAccount(ctx, height, address)
+	if err != nil {
+		return nil, err
+	}
+	return acc.GetCoins(), nil
 }
 
 func (d Client) supply(ctx context.Context, height *int64) (coins sdk.Coins, err error) {
-	const path = "supply/total_supply"
+	const path = "custom/" + supply.QuerierRoute + "/total_supply"
 	supplyReq := struct {
 		Page, Limit int
-	}{}
-	err = d.do(ctx, path, height, supplyReq, &coins)
+	}{
+		Page:  1,
+		Limit: 0,
+	}
+	err = d.doABCI(ctx, height, path, supplyReq, &coins)
 	return
 }
 

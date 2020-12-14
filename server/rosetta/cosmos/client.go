@@ -31,7 +31,6 @@ var (
 
 type Client struct {
 	tm        rpcclient.Client
-	lcd       string
 	cdc       *amino.Codec
 	txDecoder sdk.TxDecoder
 	txEncoder sdk.TxEncoder
@@ -45,7 +44,7 @@ func (d Client) NodeVersion() string {
 	return "0.37.12"
 }
 
-func NewDataClient(tmEndpoint string, lcdEndpoint string, cdc *amino.Codec) (Client, error) {
+func NewDataClient(tmEndpoint string, cdc *amino.Codec) (Client, error) {
 	tmClient := rpcclient.NewHTTP(tmEndpoint, "/websocket")
 	// test it works
 	_, err := tmClient.Health()
@@ -54,7 +53,6 @@ func NewDataClient(tmEndpoint string, lcdEndpoint string, cdc *amino.Codec) (Cli
 	}
 	dc := Client{
 		tm:        tmClient,
-		lcd:       lcdEndpoint,
 		cdc:       cdc,
 		txDecoder: auth.DefaultTxDecoder(cdc),
 		txEncoder: auth.DefaultTxEncoder(cdc),

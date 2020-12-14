@@ -5,8 +5,6 @@ set -e
 wait_for_node() {
     timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' cosmos 26657
     echo "tendermint rpc is up"
-    timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' rest 1317
-    echo "rest server is up"
 }
 wait_for_rosetta() {
   timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' rosetta 8080
