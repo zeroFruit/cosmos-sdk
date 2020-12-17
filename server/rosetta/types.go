@@ -45,7 +45,7 @@ type CosmosConstructionAPIClient interface {
 	PostTxBytes(ctx context.Context, txBytes []byte) (txResp *types.TransactionIdentifier, meta map[string]interface{}, err error)
 	ConstructionMetadataFromOptions(ctx context.Context, options map[string]interface{}) (meta map[string]interface{}, err error)
 	SignedTx(ctx context.Context, txBytes []byte, sigs []*types.Signature) (signedTxBytes []byte, err error)
-	OperationsToMetadata(ctx context.Context, ops []*types.Operation) (meta map[string]interface{}, err error)
+	PreprocessOperationsToOptions(ctx context.Context, req *types.ConstructionPreprocessRequest) (options map[string]interface{}, err error)
 	ConstructionPayload(ctx context.Context, req *types.ConstructionPayloadsRequest) (resp *types.ConstructionPayloadsResponse, err error)
 }
 

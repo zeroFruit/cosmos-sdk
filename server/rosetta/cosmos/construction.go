@@ -168,25 +168,42 @@ func (d Client) SignedTx(ctx context.Context, txBytes []byte, sigs []*types.Sign
 	return
 }
 
-func (d Client) OperationsToMetadata(_ context.Context, ops []*types.Operation) (meta map[string]interface{}, err error) {
-	_, addr, _, err := operationsToSdkMsgs(ops)
-	if err != nil {
-		return nil, rosetta.WrapError(rosetta.ErrBadArgument, err.Error())
+func (d Client) PreprocessOperationsToOptions(ctx context.Context, req *types.ConstructionPreprocessRequest) (options map[string]interface{}, err error) {
+	operations := req.Operations
+	if len(operations) > 3 {
+		return nil, rosetta.WrapError(rosetta.ErrBadArgument, "expected at maximum 3 operations")
 	}
 
-	meta = map[string]interface{}{
-		OptionAddress: addr,
-		OptionGas:     200000,
+	msgs, _, err := operationsToSdkMsgs(d.rosMsgs, operations)
+	if err != nil {
+		return nil, rosetta.WrapError(rosetta.ErrInvalidAddress, err.Error())
 	}
-	return
+
+	memo, ok := req.Metadata["memo"]
+	if !ok {
+		memo = ""
+	}
+
+	defaultGas := float64(200000)
+
+	gas := req.SuggestedFeeMultiplier
+	if gas == nil {
+		gas = &defaultGas
+	}
+
+	return map[string]interface{}{
+		OptionAddress: msgs[0].GetSigners()[0],
+		OptionMemo:    memo,
+		OptionGas:     gas,
+	}, nil
 }
 
 func (d Client) ConstructionPayload(ctx context.Context, req *types.ConstructionPayloadsRequest) (resp *types.ConstructionPayloadsResponse, err error) {
 	if len(req.Operations) > 3 {
-		return nil, rosetta.ErrInvalidOperation
+		return nil, rosetta.WrapError(rosetta.ErrInvalidOperation, "operations must be at least 3")
 	}
 
-	msgs, signAddr, fee, err := operationsToSdkMsgs(req.Operations)
+	msgs, fee, err := operationsToSdkMsgs(d.rosMsgs, req.Operations)
 	if err != nil {
 		return nil, rosetta.WrapError(rosetta.ErrInvalidOperation, err.Error())
 	}
@@ -208,16 +225,29 @@ func (d Client) ConstructionPayload(ctx context.Context, req *types.Construction
 		return nil, rosetta.WrapError(rosetta.ErrBadArgument, err.Error())
 	}
 
+	accIdentifiers := getAccountIdentifiersByMsgs(msgs)
+	payloads := make([]*types.SigningPayload, len(accIdentifiers))
+	for i, accID := range accIdentifiers {
+		payloads[i] = &types.SigningPayload{
+			AccountIdentifier: accID,
+			Bytes:             crypto.Sha256(signBytes),
+			SignatureType:     "ecdsa",
+		}
+	}
+
 	return &types.ConstructionPayloadsResponse{
 		UnsignedTransaction: hex.EncodeToString(txBytes),
-		Payloads: []*types.SigningPayload{
-			{
-				AccountIdentifier: &types.AccountIdentifier{
-					Address: signAddr,
-				},
-				Bytes:         crypto.Sha256(signBytes),
-				SignatureType: "ecdsa",
-			},
-		},
+		Payloads:            payloads,
 	}, nil
+}
+
+func getAccountIdentifiersByMsgs(msgs []sdk.Msg) []*types.AccountIdentifier {
+	var accIdentifiers []*types.AccountIdentifier
+	for _, msg := range msgs {
+		for _, signer := range msg.GetSigners() {
+			accIdentifiers = append(accIdentifiers, &types.AccountIdentifier{Address: signer.String()})
+		}
+	}
+
+	return accIdentifiers
 }

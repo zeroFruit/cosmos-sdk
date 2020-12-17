@@ -85,23 +85,13 @@ func (on OnlineNetwork) ConstructionPayloads(ctx context.Context, request *types
 }
 
 func (on OnlineNetwork) ConstructionPreprocess(ctx context.Context, request *types.ConstructionPreprocessRequest) (*types.ConstructionPreprocessResponse, *types.Error) {
-	if len(request.Operations) == 0 {
-		return nil, rosetta.WrapError(rosetta.ErrBadArgument, "no operations").RosettaError()
-	}
-
-	metadata, err := on.client.OperationsToMetadata(ctx, request.Operations)
+	options, err := on.client.PreprocessOperationsToOptions(ctx, request)
 	if err != nil {
 		return nil, rosetta.ToRosettaError(err)
 	}
 
-	memo, ok := request.Metadata["memo"]
-	if !ok {
-		memo = ""
-	}
-	metadata["memo"] = memo
-
 	return &types.ConstructionPreprocessResponse{
-		Options: metadata,
+		Options: options,
 	}, nil
 }
 

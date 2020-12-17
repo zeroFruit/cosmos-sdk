@@ -4,158 +4,51 @@ import (
 	"fmt"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"strconv"
 	"strings"
 )
 
-func operationsToSdkMsgs(ops []*types.Operation) ([]sdk.Msg, string, sdk.Coins, error) {
+func operationsToSdkMsgs(handlers map[string]func(ops []*types.Operation) (sdk.Msg, error), ops []*types.Operation) ([]sdk.Msg, sdk.Coins, error) {
 	var feeAmnt []*types.Amount
 	var newOps []*types.Operation
-	if len(ops)%2 == 0 {
-		msgs, signAddr, err := convertOpsToMsgs(ops)
-		return msgs, signAddr, nil, err
-	}
 
-	if len(ops)%2 == 1 {
-		for _, op := range ops {
-			switch op.Type {
-			case OperationFee:
-				amount := op.Amount
-				feeAmnt = append(feeAmnt, amount)
-			default:
-				newOps = append(newOps, op)
-			}
-		}
-	}
-	msgs, signAddr, err := convertOpsToMsgs(newOps)
-	if err != nil {
-		return nil, "", nil, err
-	}
-
-	return msgs, signAddr, amountsToCoins(feeAmnt), nil
-}
-
-func convertOpsToMsgs(ops []*types.Operation) ([]sdk.Msg, string, error) {
-	var msgs []sdk.Msg
-	var signAddr string
-	var sendOps []*types.Operation
-	var delOps []*types.Operation
 	for _, op := range ops {
 		switch op.Type {
-		case opBankSend:
-			sendOps = append(sendOps, op)
-		case opDelegate:
-			delOps = append(delOps, op)
+		case operationFee:
+			amount := op.Amount
+			feeAmnt = append(feeAmnt, amount)
+		default:
+			newOps = append(newOps, op)
 		}
-	}
-	if len(sendOps) == 2 {
-		sendMsg, err := operationsToSdkBankMsgSend(sendOps)
-		if err != nil {
-			return nil, "", err
-		}
-		msgs = append(msgs, sendMsg)
-		signAddr = sendMsg.FromAddress.String()
 	}
 
-	if len(delOps) == 2 {
-		delMsg, err := operationsToSdkStakingMsgDelegate(delOps)
-		if err != nil {
-			return nil, "", err
-		}
-		msgs = append(msgs, delMsg)
-		signAddr = delMsg.DelegatorAddress.String()
+	msgs, err := convertOpsToMsgs(handlers, newOps)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return msgs, signAddr, nil
+	return msgs, amountsToCoins(feeAmnt), nil
 }
 
-// operationsToSdkBankMsgSend extracts the from and to addresses from a list of operations.
-// We assume that it comes formated in the correct way. And that the balance of the sender is the same
-// as the receiver operations.
-func operationsToSdkBankMsgSend(ops []*types.Operation) (bank.MsgSend, error) {
-	var (
-		from, to sdk.AccAddress
-		sendAmt  sdk.Coin
-		err      error
-	)
-
+func convertOpsToMsgs(opHandlers map[string]func(ops []*types.Operation) (sdk.Msg, error), ops []*types.Operation) (msgs []sdk.Msg, err error) {
+	opsForHandler := make(map[string][]*types.Operation)
 	for _, op := range ops {
-		if strings.HasPrefix(op.Amount.Value, "-") {
-			from, err = sdk.AccAddressFromBech32(op.Account.Address)
-			if err != nil {
-				return bank.MsgSend{}, err
-			}
-			continue
-		}
-
-		to, err = sdk.AccAddressFromBech32(op.Account.Address)
-		if err != nil {
-			return bank.MsgSend{}, err
-		}
-
-		amount, err := strconv.ParseInt(op.Amount.Value, 10, 64)
-		if err != nil {
-			return bank.MsgSend{}, fmt.Errorf("invalid amount")
-		}
-
-		sendAmt = sdk.NewCoin(op.Amount.Currency.Symbol, sdk.NewInt(amount))
-
+		opsForHandler[op.Type] = append(opsForHandler[op.Type], op)
 	}
 
-	return bank.MsgSend{FromAddress: from, ToAddress: to, Amount: sdk.NewCoins(sendAmt)}, nil
-}
-
-func operationsToSdkStakingMsgDelegate(ops []*types.Operation) (stakingtypes.MsgDelegate, error) {
-	var (
-		delAddr sdk.AccAddress
-		valAddr sdk.ValAddress
-		sendAmt sdk.Coin
-		err     error
-	)
-
-	for _, op := range ops {
-		if strings.HasPrefix(op.Amount.Value, "-") {
-			delAddr, err = sdk.AccAddressFromBech32(op.Account.Address)
-			if err != nil {
-				return stakingtypes.MsgDelegate{}, err
-			}
-			continue
+	for k, v := range opsForHandler {
+		handler, ok := opHandlers[k]
+		if !ok {
+			return nil, fmt.Errorf("handler not found for operation: %s", k)
 		}
-
-		valAddr, err = sdk.ValAddressFromBech32(op.Account.Address)
+		msg, err := handler(v)
 		if err != nil {
-			return stakingtypes.MsgDelegate{}, err
+			return nil, err
 		}
-
-		amount, err := strconv.ParseInt(op.Amount.Value, 10, 64)
-		if err != nil {
-			return stakingtypes.MsgDelegate{}, fmt.Errorf("invalid amount")
-		}
-
-		sendAmt = sdk.NewCoin(op.Amount.Currency.Symbol, sdk.NewInt(amount))
-
+		msgs = append(msgs, msg)
 	}
 
-	return stakingtypes.NewMsgDelegate(delAddr, valAddr, sendAmt), nil
-}
-
-// amountsToCoins converts rosetta amounts to sdk coins
-func amountsToCoins(amounts []*types.Amount) sdk.Coins {
-	var feeCoins sdk.Coins
-
-	for _, amount := range amounts {
-		absValue := strings.Trim(amount.Value, "-")
-		value, err := strconv.ParseInt(absValue, 10, 64)
-		if err != nil {
-			return nil
-		}
-		coin := sdk.NewCoin(amount.Currency.Symbol, sdk.NewInt(value))
-		feeCoins = append(feeCoins, coin)
-	}
-
-	return feeCoins
+	return msgs, nil
 }
 
 type payloadReqMeta struct {
@@ -217,4 +110,21 @@ func GetMetadataFromPayloadReq(metadata map[string]interface{}) (*payloadReqMeta
 		Gas:           uint64(gasF64),
 		Memo:          memoStr,
 	}, nil
+}
+
+// amountsToCoins converts rosetta amounts to sdk coins
+func amountsToCoins(amounts []*types.Amount) sdk.Coins {
+	var feeCoins sdk.Coins
+
+	for _, amount := range amounts {
+		absValue := strings.Trim(amount.Value, "-")
+		value, err := strconv.ParseInt(absValue, 10, 64)
+		if err != nil {
+			return nil
+		}
+		coin := sdk.NewCoin(amount.Currency.Symbol, sdk.NewInt(value))
+		feeCoins = append(feeCoins, coin)
+	}
+
+	return feeCoins
 }
