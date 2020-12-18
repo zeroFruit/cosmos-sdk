@@ -20,17 +20,18 @@ func sdkTxToOperations(tx sdk.Tx, withStatus, hasError bool) []*types.Operation 
 
 	feeTx := tx.(auth.StdTx)
 	feeCoins := feeTx.Fee.Amount
-	var feeOps = rosettaFeeOperationsFromCoins(feeCoins, feeTx.GetSigners()[0].String(), withStatus)
-	operations = append(operations, feeOps...)
 
 	msgOps := sdkMsgsToRosettaOperations(tx.GetMsgs(), withStatus, hasError)
 	operations = append(operations, msgOps...)
+
+	var feeOps = rosettaFeeOperationsFromCoins(feeCoins, feeTx.GetSigners()[0].String(), withStatus, len(msgOps))
+	operations = append(operations, feeOps...)
 
 	return operations
 }
 
 // rosettaFeeOperationsFromCoins returns the list of rosetta fee operations given sdk coins
-func rosettaFeeOperationsFromCoins(coins sdk.Coins, account string, withStatus bool) []*types.Operation {
+func rosettaFeeOperationsFromCoins(coins sdk.Coins, account string, withStatus bool, previousOps int) []*types.Operation {
 	feeOps := make([]*types.Operation, 0)
 	var status string
 	if withStatus {
@@ -40,7 +41,7 @@ func rosettaFeeOperationsFromCoins(coins sdk.Coins, account string, withStatus b
 	for i, coin := range coins {
 		op := &types.Operation{
 			OperationIdentifier: &types.OperationIdentifier{
-				Index: int64(i),
+				Index: int64(i + previousOps),
 			},
 			Type:   operationFee,
 			Status: status,
