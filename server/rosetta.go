@@ -2,21 +2,20 @@ package server
 
 import (
 	"fmt"
+	"github.com/coinbase/rosetta-sdk-go/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
 	"github.com/cosmos/cosmos-sdk/server/rosetta"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
-	"github.com/tendermint/cosmos-rosetta-gateway/service"
+	crg "github.com/tendermint/cosmos-rosetta-gateway/server"
 )
 
 const (
 	flagBlockchain    = "blockchain"
 	flagNetwork       = "network"
 	flagTendermintRPC = "tendermint-rpc"
-	flagAppRPC        = "app-rpc"
-	flagOfflineMode   = "offline"
 	flagListenAddr    = "listen-addr"
 )
 
@@ -25,76 +24,52 @@ func RosettaCommand(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "rosetta",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			options, err := getRosettaOptionsFromFlags(cmd.Flags())
+			options, err := getRosettaSettingsFromFlags(cmd.Flags())
 			if err != nil {
 				return err
 			}
-
-			listenAddr, err := cmd.Flags().GetString(flagListenAddr)
-			if err != nil {
-				return err
-			}
-
-			s, err := service.New(
-				service.Options{ListenAddress: listenAddr},
-				rosetta.NewNetwork(cdc, options),
-			)
-			if err != nil {
-				panic(err)
-			}
-
-			fmt.Printf("starting Rosetta API service at %s\n", listenAddr)
-
-			err = s.Start()
-			if err != nil {
-				panic(err)
-			}
-
-			return nil
+			return crg.Serve(options)
 		},
 	}
 
 	cmd.Flags().String(flagBlockchain, "blockchain", "Application's name (e.g. Cosmos Hub)")
 	cmd.Flags().String(flagListenAddr, "localhost:8080", "The address where Rosetta API will listen.")
 	cmd.Flags().String(flagNetwork, "network", "Network's identifier (e.g. cosmos-hub-3, testnet-1, etc)")
-	cmd.Flags().String(flagAppRPC, "localhost:1317", "Application's RPC endpoint.")
 	cmd.Flags().String(flagTendermintRPC, "localhost:26657", "Tendermint's RPC endpoint.")
-	cmd.Flags().Bool(flagOfflineMode, false, "Flag that forces the rosetta service to run in offline mode, some endpoints won't work.")
 
 	return cmd
 }
 
-func getRosettaOptionsFromFlags(flags *flag.FlagSet) (rosetta.Options, error) {
+func getRosettaSettingsFromFlags(flags *flag.FlagSet) (crg.Settings, error) {
+	listenAddr, err := flags.GetString(flagListenAddr)
+	if err != nil {
+		return crg.Settings{}, err
+	}
 	blockchain, err := flags.GetString(flagBlockchain)
 	if err != nil {
-		return rosetta.Options{}, fmt.Errorf("invalid blockchain value: %w", err)
+		return crg.Settings{}, fmt.Errorf("invalid blockchain value: %w", err)
 	}
 
 	network, err := flags.GetString(flagNetwork)
 	if err != nil {
-		return rosetta.Options{}, fmt.Errorf("invalid network value: %w", err)
-	}
-
-	appRPC, err := flags.GetString(flagAppRPC)
-	if err != nil {
-		return rosetta.Options{}, fmt.Errorf("invalid app rpc value: %w", err)
+		return crg.Settings{}, fmt.Errorf("invalid network value: %w", err)
 	}
 
 	tendermintRPC, err := flags.GetString(flagTendermintRPC)
 	if err != nil {
-		return rosetta.Options{}, fmt.Errorf("invalid tendermint rpc value: %w", err)
+		return crg.Settings{}, fmt.Errorf("invalid tendermint rpc value: %w", err)
 	}
 
-	offline, err := flags.GetBool(flagOfflineMode)
+	client, err := rosetta.NewClient(tendermintRPC)
 	if err != nil {
-		return rosetta.Options{}, fmt.Errorf("invalid offline value: %w", err)
+		return crg.Settings{}, err
 	}
-
-	return rosetta.Options{
-		AppEndpoint:        appRPC,
-		TendermintEndpoint: tendermintRPC,
-		Blockchain:         blockchain,
-		Network:            network,
-		OfflineMode:        offline,
+	return crg.Settings{
+		Network: &types.NetworkIdentifier{
+			Blockchain: blockchain,
+			Network:    network,
+		},
+		Client: client,
+		Listen: listenAddr,
 	}, nil
 }
