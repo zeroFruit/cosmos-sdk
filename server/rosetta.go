@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/tendermint/go-amino"
+	"strings"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
@@ -65,6 +67,9 @@ func getRosettaSettingsFromFlags(cdc *amino.Codec, flags *flag.FlagSet) (crg.Set
 		return crg.Settings{}, fmt.Errorf("invalid tendermint rpc value: %w", err)
 	}
 
+	if !strings.HasPrefix(tendermintRPC, "tcp://") {
+		tendermintRPC = fmt.Sprintf("tcp://%s", tendermintRPC)
+	}
 	client, err := rosetta.NewClient(tendermintRPC, cdc)
 	if err != nil {
 		return crg.Settings{}, err
@@ -74,7 +79,10 @@ func getRosettaSettingsFromFlags(cdc *amino.Codec, flags *flag.FlagSet) (crg.Set
 			Blockchain: blockchain,
 			Network:    network,
 		},
-		Client: client,
-		Listen: listenAddr,
+		Client:    client,
+		Listen:    listenAddr,
+		Offline:   false,
+		Retries:   5,
+		RetryWait: 5 * time.Second,
 	}, nil
 }

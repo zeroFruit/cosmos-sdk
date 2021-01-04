@@ -7,12 +7,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
-
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	crgerrs "github.com/tendermint/cosmos-rosetta-gateway/errors"
 	crgtypes "github.com/tendermint/cosmos-rosetta-gateway/types"
 	"github.com/tendermint/tendermint/rpc/client"
 	"github.com/tendermint/tendermint/rpc/client/http"
+	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 func (c *Client) Bootstrap() error {
@@ -120,18 +120,7 @@ func (c *Client) BlockByHeight(ctx context.Context, height *int64) (block crgtyp
 	if err != nil {
 		return block, crgerrs.WrapError(crgerrs.ErrUnknown, err.Error())
 	}
-	block = crgtypes.BlockResponse{
-		Block: &types.BlockIdentifier{
-			Index: tmBlock.Block.Height,
-			Hash:  fmt.Sprintf("%X", tmBlock.Block.Hash()),
-		},
-		ParentBlock: &types.BlockIdentifier{
-			Index: tmBlock.Block.Height - 1,
-			Hash:  fmt.Sprintf("%X", tmBlock.Block.LastBlockID.Hash),
-		},
-		MillisecondTimestamp: timeToMilliseconds(tmBlock.Block.Time),
-		TxCount:              int64(len(tmBlock.Block.Txs)),
-	}
+	block = tmBlockToBlockResponse(tmBlock)
 	return block, nil
 }
 
@@ -282,4 +271,23 @@ func (c *Client) ConstructionMetadataFromOptions(ctx context.Context, options ma
 		OptionGas:           gas,
 		OptionMemo:          memo,
 	}, nil
+}
+
+func tmBlockToBlockResponse(tmBlock *coretypes.ResultBlock) crgtypes.BlockResponse {
+	block := crgtypes.BlockResponse{
+		Block: &types.BlockIdentifier{
+			Index: tmBlock.Block.Height,
+			Hash:  fmt.Sprintf("%X", tmBlock.Block.Hash()),
+		},
+		ParentBlock: &types.BlockIdentifier{
+			Index: tmBlock.Block.Height - 1,
+			Hash:  fmt.Sprintf("%X", tmBlock.Block.LastBlockID.Hash),
+		},
+		MillisecondTimestamp: timeToMilliseconds(tmBlock.Block.Time),
+		TxCount:              int64(len(tmBlock.Block.Txs)),
+	}
+	if tmBlock.Block.Height == 1 {
+		block.ParentBlock = block.Block
+	}
+	return block
 }
