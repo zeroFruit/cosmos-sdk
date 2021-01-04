@@ -576,6 +576,8 @@ github.com/tendermint/cosmos-rosetta-gateway v0.2.1-0.20201216100359-444f3e966fd
 github.com/tendermint/cosmos-rosetta-gateway v0.2.1-0.20201216100359-444f3e966fd3/go.mod h1:gBPw8WV2Erm4UGHlBRiM3zaEBst4bsuihmMCNQdgP/s=
 github.com/tendermint/cosmos-rosetta-gateway v0.2.1-0.20201218150014-c20a4c797ad3 h1:SNIFrpwhSXTA6oqFwr+9wkParyppsQSNi4bKGtHp5c4=
 github.com/tendermint/cosmos-rosetta-gateway v0.2.1-0.20201218150014-c20a4c797ad3/go.mod h1:gBPw8WV2Erm4UGHlBRiM3zaEBst4bsuihmMCNQdgP/s=
+github.com/tendermint/cosmos-rosetta-gateway v0.3.0-rc1 h1:UEkXlFMcWdQWPOA/Rf8nV4WruMK7JO2U8iX7rMTuC24=
+github.com/tendermint/cosmos-rosetta-gateway v0.3.0-rc1/go.mod h1:gBPw8WV2Erm4UGHlBRiM3zaEBst4bsuihmMCNQdgP/s=
 github.com/tendermint/crypto v0.0.0-20191022145703-50d29ede1e15 h1:hqAk8riJvK4RMWx1aInLzndwxKalgi5rTqgfXxOxbEI=
 github.com/tendermint/crypto v0.0.0-20191022145703-50d29ede1e15/go.mod h1:z4YtwM70uOnk8h0pjJYlj3zdYwi9l03By6iAIF5j/Pk=
 github.com/tendermint/go-amino v0.14.1/go.mod h1:i/UKE5Uocn+argJJBb12qTZsCDBcAYMbR92AaJVmKso=

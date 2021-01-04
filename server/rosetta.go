@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/coinbase/rosetta-sdk-go/types"
+	"github.com/tendermint/go-amino"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
@@ -24,11 +25,15 @@ func RosettaCommand(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "rosetta",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			options, err := getRosettaSettingsFromFlags(cmd.Flags())
+			settings, err := getRosettaSettingsFromFlags(cdc, cmd.Flags())
 			if err != nil {
 				return err
 			}
-			return crg.Serve(options)
+			srv, err := crg.NewServer(settings)
+			if err != nil {
+				return err
+			}
+			return srv.Start()
 		},
 	}
 
@@ -40,7 +45,7 @@ func RosettaCommand(cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-func getRosettaSettingsFromFlags(flags *flag.FlagSet) (crg.Settings, error) {
+func getRosettaSettingsFromFlags(cdc *amino.Codec, flags *flag.FlagSet) (crg.Settings, error) {
 	listenAddr, err := flags.GetString(flagListenAddr)
 	if err != nil {
 		return crg.Settings{}, err
@@ -60,7 +65,7 @@ func getRosettaSettingsFromFlags(flags *flag.FlagSet) (crg.Settings, error) {
 		return crg.Settings{}, fmt.Errorf("invalid tendermint rpc value: %w", err)
 	}
 
-	client, err := rosetta.NewClient(tendermintRPC)
+	client, err := rosetta.NewClient(tendermintRPC, cdc)
 	if err != nil {
 		return crg.Settings{}, err
 	}
