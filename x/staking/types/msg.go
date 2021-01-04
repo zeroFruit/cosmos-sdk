@@ -3,7 +3,11 @@ package types
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
 
+	rosettatypes "github.com/coinbase/rosetta-sdk-go/types"
 	"github.com/tendermint/tendermint/crypto"
 	yaml "gopkg.in/yaml.v2"
 
@@ -291,6 +295,76 @@ func (msg MsgDelegate) ValidateBasic() error {
 		return ErrBadDelegationAmount
 	}
 	return nil
+}
+
+func (msg *MsgDelegate) ToOperations(withStatus bool, hasError bool) []*rosettatypes.Operation {
+	var operations []*rosettatypes.Operation
+	delAddr := msg.DelegatorAddress
+	valAddr := msg.ValidatorAddress
+	coin := msg.Amount
+	delOp := func(account string, amount string, index int) *rosettatypes.Operation {
+		var status string
+		if withStatus {
+			status = "Success"
+			if hasError {
+				status = "Reverted"
+			}
+		}
+		return &rosettatypes.Operation{
+			OperationIdentifier: &rosettatypes.OperationIdentifier{
+				Index: int64(index),
+			},
+			Type:   "cosmos-sdk/MsgDelegate",
+			Status: status,
+			Account: &rosettatypes.AccountIdentifier{
+				Address: account,
+			},
+			Amount: &rosettatypes.Amount{
+				Value: amount,
+				Currency: &rosettatypes.Currency{
+					Symbol: coin.Denom,
+				},
+			},
+		}
+	}
+	operations = append(operations,
+		delOp(delAddr.String(), "-"+coin.Amount.String(), 0),
+		delOp(valAddr.String(), coin.Amount.String(), 1),
+	)
+	return operations
+}
+
+func (msg MsgDelegate) FromOperations(ops []*rosettatypes.Operation) (sdk.Msg, error) {
+	var (
+		delAddr sdk.AccAddress
+		valAddr sdk.ValAddress
+		sendAmt sdk.Coin
+		err     error
+	)
+
+	for _, op := range ops {
+		if strings.HasPrefix(op.Amount.Value, "-") {
+			delAddr, err = sdk.AccAddressFromBech32(op.Account.Address)
+			if err != nil {
+				return nil, err
+			}
+			continue
+		}
+
+		valAddr, err = sdk.ValAddressFromBech32(op.Account.Address)
+		if err != nil {
+			return nil, err
+		}
+
+		amount, err := strconv.ParseInt(op.Amount.Value, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid amount")
+		}
+
+		sendAmt = sdk.NewCoin(op.Amount.Currency.Symbol, sdk.NewInt(amount))
+	}
+
+	return NewMsgDelegate(delAddr, valAddr, sendAmt), nil
 }
 
 //______________________________________________________________________

@@ -13,6 +13,7 @@ import (
 	"github.com/tendermint/tendermint/rpc/client"
 	"github.com/tendermint/tendermint/rpc/client/http"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	"log"
 )
 
 func (c *Client) Bootstrap() error {
@@ -66,6 +67,7 @@ func (c *Client) doABCI(ctx context.Context, height *int64, path string, req int
 	}
 
 	if !result.Response.IsOK() {
+		log.Printf("got: %#v", result.Response)
 		return crgerrs.WrapError(crgerrs.ErrUnknown, result.Response.Log)
 	}
 	err = c.cdc.UnmarshalJSON(result.Response.Value, resp)
@@ -86,7 +88,7 @@ func (c *Client) getAccount(ctx context.Context, height *int64, address string) 
 	var acc authexported.Account
 	err = c.doABCI(ctx, height, path, params, &acc)
 	if err != nil {
-		return nil, crgerrs.WrapError(crgerrs.ErrUnknown, err.Error())
+		return nil, err
 	}
 	return acc, nil
 }

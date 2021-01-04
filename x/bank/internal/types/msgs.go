@@ -1,8 +1,12 @@
 package types
 
 import (
+	"fmt"
+	rosettatypes "github.com/coinbase/rosetta-sdk-go/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"strconv"
+	"strings"
 )
 
 // RouterKey is they name of the bank module
@@ -53,6 +57,81 @@ func (msg MsgSend) GetSignBytes() []byte {
 // GetSigners Implements Msg.
 func (msg MsgSend) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.FromAddress}
+}
+
+func (msg MsgSend) ToOperations(withStatus bool, hasError bool) []*rosettatypes.Operation {
+	var operations []*rosettatypes.Operation
+
+	fromAddress := msg.FromAddress
+	toAddress := msg.ToAddress
+	amounts := msg.Amount
+	if len(amounts) == 0 {
+		return []*rosettatypes.Operation{}
+	}
+
+	coin := amounts[0]
+	sendOp := func(account sdk.AccAddress, amount string, index int) *rosettatypes.Operation {
+		var status string
+		if withStatus {
+			status = "Success" // TODO: Does not look correct to use same string as the rosetta constants of status.
+			if hasError {
+				status = "Reverted"
+			}
+		}
+		return &rosettatypes.Operation{
+			OperationIdentifier: &rosettatypes.OperationIdentifier{
+				Index: int64(index),
+			},
+			Type:   "cosmos-sdk/MsgSend", // type used by codec
+			Status: status,
+			Account: &rosettatypes.AccountIdentifier{
+				Address: account.String(),
+			},
+			Amount: &rosettatypes.Amount{
+				Value: amount,
+				Currency: &rosettatypes.Currency{
+					Symbol: coin.Denom,
+				},
+			},
+		}
+	}
+	operations = append(operations,
+		sendOp(fromAddress, "-"+coin.Amount.String(), 0),
+		sendOp(toAddress, coin.Amount.String(), 1),
+	)
+
+	return operations
+}
+
+func (msg MsgSend) FromOperations(ops []*rosettatypes.Operation) (sdk.Msg, error) {
+	var (
+		from, to sdk.AccAddress
+		sendAmt  sdk.Coin
+		err      error
+	)
+
+	for _, op := range ops {
+		if strings.HasPrefix(op.Amount.Value, "-") {
+			from, err = sdk.AccAddressFromBech32(op.Account.Address)
+			if err != nil {
+				return nil, err
+			}
+			continue
+		}
+
+		to, err = sdk.AccAddressFromBech32(op.Account.Address)
+		if err != nil {
+			return nil, err
+		}
+
+		amount, err := strconv.ParseInt(op.Amount.Value, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid amount")
+		}
+
+		sendAmt = sdk.NewCoin(op.Amount.Currency.Symbol, sdk.NewInt(amount))
+	}
+	return NewMsgSend(from, to, sdk.NewCoins(sendAmt)), nil
 }
 
 // MsgMultiSend - high level transaction of the coin module
