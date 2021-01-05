@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	crgerrs "github.com/tendermint/cosmos-rosetta-gateway/errors"
 	crgtypes "github.com/tendermint/cosmos-rosetta-gateway/types"
+	tmabci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/rpc/client"
 	"github.com/tendermint/tendermint/rpc/client/http"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -227,6 +228,9 @@ func (c *Client) PostTx(txBytes []byte) (res *types.TransactionIdentifier, meta 
 	resp, err := c.tm.BroadcastTxSync(txBytes)
 	if err != nil {
 		return nil, nil, crgerrs.WrapError(crgerrs.ErrUnknown, err.Error())
+	}
+	if resp.Code != tmabci.CodeTypeOK {
+		return nil, nil, crgerrs.WrapError(crgerrs.ErrUnknown, fmt.Sprintf("code %d: %s", resp.Code, resp.Log))
 	}
 	res = &types.TransactionIdentifier{Hash: fmt.Sprintf("%X", resp.Hash)}
 	meta = map[string]interface{}{
