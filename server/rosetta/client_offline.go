@@ -3,6 +3,7 @@ package rosetta
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"github.com/coinbase/rosetta-sdk-go/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -13,10 +14,13 @@ import (
 )
 
 func (c *Client) SignedTx(ctx context.Context, txBytes []byte, sigs []*types.Signature) (signedTxBytes []byte, err error) {
-	var stdTx auth.StdTx
-	err = c.cdc.UnmarshalJSON(txBytes, &stdTx)
+	rawTx, err := c.txDecoder(txBytes)
 	if err != nil {
 		return nil, crgerrs.WrapError(crgerrs.ErrInvalidTransaction, err.Error())
+	}
+	stdTx, ok := rawTx.(auth.StdTx)
+	if !ok {
+		return nil, crgerrs.WrapError(crgerrs.ErrInvalidTransaction, fmt.Sprintf("unexpected transaction of type: %T", rawTx))
 	}
 	sdkSig := make([]auth.StdSignature, len(sigs))
 	for i, signature := range sigs {
@@ -38,9 +42,8 @@ func (c *Client) SignedTx(ctx context.Context, txBytes []byte, sigs []*types.Sig
 		}
 		sdkSig[i] = sign
 	}
-
 	stdTx.Signatures = sdkSig
-	signedTxBytes, err = c.cdc.MarshalJSON(stdTx)
+	signedTxBytes, err = c.txEncoder(stdTx)
 	if err != nil {
 		return nil, crgerrs.WrapError(crgerrs.ErrCodec, "unable to marshal signed tx: "+err.Error())
 	}
@@ -48,10 +51,13 @@ func (c *Client) SignedTx(ctx context.Context, txBytes []byte, sigs []*types.Sig
 }
 
 func (c *Client) TxOperationsAndSignersAccountIdentifiers(signed bool, hexBytes []byte) (ops []*types.Operation, signers []*types.AccountIdentifier, err error) {
-	var stdTx auth.StdTx
-	err = c.cdc.UnmarshalJSON(hexBytes, &stdTx)
+	rawTx, err := c.txDecoder(hexBytes)
 	if err != nil {
 		return nil, nil, crgerrs.WrapError(crgerrs.ErrInvalidTransaction, err.Error())
+	}
+	stdTx, ok := rawTx.(auth.StdTx)
+	if !ok {
+		return nil, nil, crgerrs.WrapError(crgerrs.ErrInvalidTransaction, fmt.Sprintf("unexpected transaction of type: %T", rawTx))
 	}
 	ops = sdkTxToOperations(stdTx, false, false)
 
@@ -93,7 +99,7 @@ func (c *Client) ConstructionPayload(ctx context.Context, req *types.Constructio
 	signBytes := auth.StdSignBytes(
 		metadata.ChainID, metadata.AccountNumber, metadata.Sequence, tx.Fee, tx.Msgs, tx.Memo,
 	)
-	txBytes, err := c.cdc.MarshalJSON(tx)
+	txBytes, err := c.txEncoder(tx)
 	if err != nil {
 		return nil, crgerrs.WrapError(crgerrs.ErrBadArgument, err.Error())
 	}
