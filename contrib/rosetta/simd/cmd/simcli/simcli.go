@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	rosettaconf "github.com/cosmos/cosmos-sdk/server/rosetta/config"
+	roscmd "github.com/cosmos/cosmos-sdk/server/rosetta/cmd"
 	app "github.com/cosmos/cosmos-sdk/simapp"
 	"os"
 	"path"
@@ -70,7 +70,7 @@ func main() {
 		client.LineBreak,
 		version.Cmd,
 		client.NewCompletionCmd(rootCmd, true),
-		rosettaconf.RosettaCommand(cdc),
+		roscmd.RosettaCommand(cdc),
 	)
 
 	// Add flags and prefix all env exposed with GA

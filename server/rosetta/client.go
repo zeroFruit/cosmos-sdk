@@ -1,4 +1,4 @@
-package cosmos
+package rosetta
 
 import (
 	"github.com/coinbase/rosetta-sdk-go/types"
@@ -10,21 +10,36 @@ import (
 	"unsafe"
 )
 
+// statuses
 const (
-	OptionAddress = "address"
-	OptionGas     = "gas"
-	operationFee  = "fee"
-	OptionMemo    = "memo"
+	StatusSuccess = "Success"
+	StageSynced   = "synced"
+	StageSyncing  = "syncing"
 )
+
+// misc
 const (
-	// Metadata Keys
-	ChainIDKey       = "chain_id"
-	SequenceKey      = "sequence"
-	AccountNumberKey = "account_number"
-	GasKey           = "gas"
+	Log = "log"
+)
+
+// operations
+const (
+	OperationFee = "fee"
+)
+
+// options
+const (
+	OptionAccountNumber = "account_number"
+	OptionAddress       = "address"
+	OptionChainID       = "chain_id"
+	OptionSequence      = "sequence"
+	OptionMemo          = "memo"
+	OptionGas           = "gas"
 )
 
 type Client struct {
+	tmEndpoint string
+
 	tm        rpcclient.Client
 	cdc       *amino.Codec
 	txDecoder sdk.TxDecoder
@@ -33,33 +48,36 @@ type Client struct {
 	rosMsgs map[string]func(ops []*types.Operation) (sdk.Msg, error)
 }
 
-func (d Client) SupportedOperations() []string {
-	ops := make([]string, 0, len(d.rosMsgs)+1)
-	ops = append(ops, operationFee)
-	for k := range d.rosMsgs {
+func (c *Client) SupportedOperations() []string {
+	ops := make([]string, 0, len(c.rosMsgs)+1)
+	ops = append(ops, OperationFee)
+	for k := range c.rosMsgs {
 		ops = append(ops, k)
 	}
 	return ops
 }
 
-func (d Client) NodeVersion() string {
-	return "0.37.12"
+func (c *Client) OperationStatuses() []*types.OperationStatus {
+	return []*types.OperationStatus{
+		{
+			Status:     StatusSuccess,
+			Successful: true,
+		},
+	}
 }
 
-func NewDataClient(tmEndpoint string, cdc *amino.Codec) (Client, error) {
+func (c *Client) Version() string {
+	return "cosmos:0.39.x"
+}
+
+func NewClient(tmEndpoint string, cdc *amino.Codec) (*Client, error) {
 	msgs := getOperationResolvers(cdc)
-	tmClient := rpcclient.NewHTTP(tmEndpoint, "/websocket")
-	// test it works
-	_, err := tmClient.Health()
-	if err != nil {
-		return Client{}, err
-	}
-	dc := Client{
-		tm:        tmClient,
-		cdc:       cdc,
-		txDecoder: auth.DefaultTxDecoder(cdc),
-		txEncoder: auth.DefaultTxEncoder(cdc),
-		rosMsgs:   msgs,
+	dc := &Client{
+		tmEndpoint: tmEndpoint,
+		cdc:        cdc,
+		txDecoder:  auth.DefaultTxDecoder(cdc),
+		txEncoder:  auth.DefaultTxEncoder(cdc),
+		rosMsgs:    msgs,
 	}
 	return dc, nil
 }
@@ -94,5 +112,4 @@ func getOperationResolvers(cdc *amino.Codec) map[string]func(ops []*types.Operat
 		}
 	}
 	return resp
-
 }

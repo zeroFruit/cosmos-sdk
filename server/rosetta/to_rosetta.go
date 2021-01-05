@@ -1,18 +1,10 @@
-package cosmos
+package rosetta
 
 import (
-	"github.com/cosmos/cosmos-sdk/server/rosetta"
-	"time"
-
 	"github.com/coinbase/rosetta-sdk-go/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 )
-
-func timeToMilliseconds(t time.Time) int64 {
-	return t.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
-}
 
 // sdkTxToOperations converts an sdk.Tx to rosetta operations
 func sdkTxToOperations(tx sdk.Tx, withStatus, hasError bool) []*types.Operation {
@@ -35,7 +27,7 @@ func rosettaFeeOperationsFromCoins(coins sdk.Coins, account string, withStatus b
 	feeOps := make([]*types.Operation, 0)
 	var status string
 	if withStatus {
-		status = rosetta.StatusSuccess
+		status = StatusSuccess
 	}
 
 	for i, coin := range coins {
@@ -43,7 +35,7 @@ func rosettaFeeOperationsFromCoins(coins sdk.Coins, account string, withStatus b
 			OperationIdentifier: &types.OperationIdentifier{
 				Index: int64(i + previousOps),
 			},
-			Type:   operationFee,
+			Type:   OperationFee,
 			Status: status,
 			Account: &types.AccountIdentifier{
 				Address: account,

@@ -1,4 +1,4 @@
-package cosmos
+package rosetta
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ func operationsToSdkMsgs(handlers map[string]func(ops []*types.Operation) (sdk.M
 
 	for _, op := range ops {
 		switch op.Type {
-		case operationFee:
+		case OperationFee:
 			amount := op.Amount
 			feeAmnt = append(feeAmnt, amount)
 		default:
@@ -61,12 +61,12 @@ type payloadReqMeta struct {
 
 // GetMetadataFromPayloadReq obtains the metadata from the request to /construction/payloads endpoint.
 func GetMetadataFromPayloadReq(metadata map[string]interface{}) (*payloadReqMeta, error) {
-	chainID, ok := metadata[ChainIDKey].(string)
+	chainID, ok := metadata[OptionChainID].(string)
 	if !ok {
 		return nil, fmt.Errorf("chain_id metadata was not provided")
 	}
 
-	sequence, ok := metadata[SequenceKey]
+	sequence, ok := metadata[OptionSequence]
 	if !ok {
 		return nil, fmt.Errorf("sequence metadata was not provided")
 	}
@@ -76,7 +76,7 @@ func GetMetadataFromPayloadReq(metadata map[string]interface{}) (*payloadReqMeta
 		return nil, fmt.Errorf("invalid sequence value")
 	}
 
-	accountNum, ok := metadata[AccountNumberKey]
+	accountNum, ok := metadata[OptionAccountNumber]
 	if !ok {
 		return nil, fmt.Errorf("account_number metadata was not provided")
 	}
@@ -85,7 +85,7 @@ func GetMetadataFromPayloadReq(metadata map[string]interface{}) (*payloadReqMeta
 		return nil, fmt.Errorf("invalid account_number value")
 	}
 
-	gasNum, ok := metadata[GasKey]
+	gasNum, ok := metadata[OptionGas]
 	if !ok {
 		return nil, fmt.Errorf("gas metadata was not provided")
 	}
