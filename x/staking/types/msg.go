@@ -257,7 +257,7 @@ func (msg MsgDelegate) ValidateBasic() sdk.Error {
 	return nil
 }
 
-func (msg *MsgDelegate) ToOperations(withStatus bool, hasError bool) []*rosettatypes.Operation {
+func (msg MsgDelegate) ToOperations(withStatus bool, hasError bool) []*rosettatypes.Operation {
 	var operations []*rosettatypes.Operation
 	delAddr := msg.DelegatorAddress
 	valAddr := msg.ValidatorAddress
