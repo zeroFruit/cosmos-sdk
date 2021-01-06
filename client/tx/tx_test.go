@@ -1,7 +1,6 @@
 package tx_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,7 +12,6 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
 	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/cosmos/cosmos-sdk/x/auth/signing"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -24,66 +22,66 @@ func NewTestTxConfig() client.TxConfig {
 	return cfg.TxConfig
 }
 
-func TestCalculateGas(t *testing.T) {
-	makeQueryFunc := func(gasUsed uint64, wantErr bool) func(string, []byte) ([]byte, int64, error) {
-		return func(string, []byte) ([]byte, int64, error) {
-			if wantErr {
-				return nil, 0, errors.New("query failed")
-			}
-			simRes := &txtypes.SimulateResponse{
-				GasInfo: &sdk.GasInfo{GasUsed: gasUsed, GasWanted: gasUsed},
-				Result:  &sdk.Result{Data: []byte("tx data"), Log: "log"},
-			}
+// func TestCalculateGas(t *testing.T) {
+// 	makeQueryFunc := func(gasUsed uint64, wantErr bool) func(string, []byte) ([]byte, int64, error) {
+// 		return func(string, []byte) ([]byte, int64, error) {
+// 			if wantErr {
+// 				return nil, 0, errors.New("query failed")
+// 			}
+// 			simRes := &txtypes.SimulateResponse{
+// 				GasInfo: &sdk.GasInfo{GasUsed: gasUsed, GasWanted: gasUsed},
+// 				Result:  &sdk.Result{Data: []byte("tx data"), Log: "log"},
+// 			}
 
-			bz, err := simRes.Marshal()
-			if err != nil {
-				return nil, 0, err
-			}
+// 			bz, err := simRes.Marshal()
+// 			if err != nil {
+// 				return nil, 0, err
+// 			}
 
-			return bz, 0, nil
-		}
-	}
+// 			return bz, 0, nil
+// 		}
+// 	}
 
-	type args struct {
-		queryFuncGasUsed uint64
-		queryFuncWantErr bool
-		adjustment       float64
-	}
+// 	type args struct {
+// 		queryFuncGasUsed uint64
+// 		queryFuncWantErr bool
+// 		adjustment       float64
+// 	}
 
-	testCases := []struct {
-		name         string
-		args         args
-		wantEstimate uint64
-		wantAdjusted uint64
-		expPass      bool
-	}{
-		{"error", args{0, true, 1.2}, 0, 0, false},
-		{"adjusted gas", args{10, false, 1.2}, 10, 12, true},
-	}
+// 	testCases := []struct {
+// 		name         string
+// 		args         args
+// 		wantEstimate uint64
+// 		wantAdjusted uint64
+// 		expPass      bool
+// 	}{
+// 		{"error", args{0, true, 1.2}, 0, 0, false},
+// 		{"adjusted gas", args{10, false, 1.2}, 10, 12, true},
+// 	}
 
-	for _, tc := range testCases {
-		stc := tc
-		txCfg := NewTestTxConfig()
+// 	for _, tc := range testCases {
+// 		stc := tc
+// 		txCfg := NewTestTxConfig()
 
-		txf := tx.Factory{}.
-			WithChainID("test-chain").
-			WithTxConfig(txCfg).WithSignMode(txCfg.SignModeHandler().DefaultMode())
+// 		txf := tx.Factory{}.
+// 			WithChainID("test-chain").
+// 			WithTxConfig(txCfg).WithSignMode(txCfg.SignModeHandler().DefaultMode())
 
-		t.Run(stc.name, func(t *testing.T) {
-			queryFunc := makeQueryFunc(stc.args.queryFuncGasUsed, stc.args.queryFuncWantErr)
-			simRes, gotAdjusted, err := tx.CalculateGas(queryFunc, txf.WithGasAdjustment(stc.args.adjustment))
-			if stc.expPass {
-				require.NoError(t, err)
-				require.Equal(t, simRes.GasInfo.GasUsed, stc.wantEstimate)
-				require.Equal(t, gotAdjusted, stc.wantAdjusted)
-				require.NotNil(t, simRes.Result)
-			} else {
-				require.Error(t, err)
-				require.Nil(t, simRes.Result)
-			}
-		})
-	}
-}
+// 		t.Run(stc.name, func(t *testing.T) {
+// 			queryFunc := makeQueryFunc(stc.args.queryFuncGasUsed, stc.args.queryFuncWantErr)
+// 			simRes, gotAdjusted, err := tx.CalculateGas(queryFunc, txf.WithGasAdjustment(stc.args.adjustment))
+// 			if stc.expPass {
+// 				require.NoError(t, err)
+// 				require.Equal(t, simRes.GasInfo.GasUsed, stc.wantEstimate)
+// 				require.Equal(t, gotAdjusted, stc.wantAdjusted)
+// 				require.NotNil(t, simRes.Result)
+// 			} else {
+// 				require.Error(t, err)
+// 				require.Nil(t, simRes.Result)
+// 			}
+// 		})
+// 	}
+// }
 
 func TestBuildSimTx(t *testing.T) {
 	txCfg := NewTestTxConfig()

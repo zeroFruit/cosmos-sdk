@@ -2,6 +2,7 @@ package tx
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -50,7 +51,7 @@ func GenerateTx(clientCtx client.Context, txf Factory, msgs ...sdk.Msg) error {
 			return errors.New("cannot estimate gas in offline mode")
 		}
 
-		_, adjusted, err := CalculateGas(clientCtx.QueryWithData, txf, msgs...)
+		_, adjusted, err := CalculateGas(clientCtx, txf, msgs...)
 		if err != nil {
 			return err
 		}
@@ -82,7 +83,7 @@ func BroadcastTx(clientCtx client.Context, txf Factory, msgs ...sdk.Msg) error {
 	}
 
 	if txf.SimulateAndExecute() || clientCtx.Simulate {
-		_, adjusted, err := CalculateGas(clientCtx.QueryWithData, txf, msgs...)
+		_, adjusted, err := CalculateGas(clientCtx, txf, msgs...)
 		if err != nil {
 			return err
 		}
@@ -171,7 +172,7 @@ func WriteGeneratedTxResponse(
 			return
 		}
 
-		_, adjusted, err := CalculateGas(ctx.QueryWithData, txf, msgs...)
+		_, adjusted, err := CalculateGas(ctx, txf, msgs...)
 		if rest.CheckInternalServerError(w, err) {
 			return
 		}
@@ -248,7 +249,7 @@ func BuildUnsignedTx(txf Factory, msgs ...sdk.Msg) (client.TxBuilder, error) {
 // BuildSimTx creates an unsigned tx with an empty single signature and returns
 // the encoded transaction or an error if the unsigned transaction cannot be
 // built.
-func BuildSimTx(txf Factory, msgs ...sdk.Msg) ([]byte, error) {
+func BuildSimTx(txf Factory, msgs ...sdk.Msg) (*tx.SimulateRequest, error) {
 	txb, err := BuildUnsignedTx(txf, msgs...)
 	if err != nil {
 		return nil, err
@@ -271,35 +272,25 @@ func BuildSimTx(txf Factory, msgs ...sdk.Msg) ([]byte, error) {
 	if !ok {
 		return nil, fmt.Errorf("cannot simulate amino tx")
 	}
-	simReq := tx.SimulateRequest{Tx: protoProvider.GetProtoTx()}
-
-	return simReq.Marshal()
+	return &tx.SimulateRequest{Tx: protoProvider.GetProtoTx()}, nil
 }
 
 // CalculateGas simulates the execution of a transaction and returns the
 // simulation response obtained by the query and the adjusted gas amount.
-func CalculateGas(
-	queryFunc func(string, []byte) ([]byte, int64, error), txf Factory, msgs ...sdk.Msg,
+func CalculateGas(clientCtx client.Context, txf Factory, msgs ...sdk.Msg,
 ) (tx.SimulateResponse, uint64, error) {
-	txBytes, err := BuildSimTx(txf, msgs...)
+	simReq, err := BuildSimTx(txf, msgs...)
 	if err != nil {
 		return tx.SimulateResponse{}, 0, err
 	}
 
-	// TODO This should use the generated tx service Client.
-	// https://github.com/cosmos/cosmos-sdk/issues/7726
-	bz, _, err := queryFunc("/cosmos.tx.v1beta1.Service/Simulate", txBytes)
+	txServiceClient := tx.NewServiceClient(clientCtx)
+	simRes, err := txServiceClient.Simulate(context.Background(), simReq)
 	if err != nil {
 		return tx.SimulateResponse{}, 0, err
 	}
 
-	var simRes tx.SimulateResponse
-
-	if err := simRes.Unmarshal(bz); err != nil {
-		return tx.SimulateResponse{}, 0, err
-	}
-
-	return simRes, uint64(txf.GasAdjustment() * float64(simRes.GasInfo.GasUsed)), nil
+	return *simRes, uint64(txf.GasAdjustment() * float64(simRes.GasInfo.GasUsed)), nil
 }
 
 // PrepareFactory ensures the account defined by ctx.GetFromAddress() exists and
