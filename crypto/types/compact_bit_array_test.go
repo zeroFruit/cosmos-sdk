@@ -228,3 +228,24 @@ func TestCompactBitArrayGetSetIndex(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkNumTrueBitsBefore(b *testing.B) {
+	ba, _ := randCompactBitArray(100)
+	var respOld, respNew int
+
+	b.Run("old", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			respOld = ba.numTrueBitsBefore2(90)
+		}
+	})
+
+	b.Run("new", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			respNew = ba.NumTrueBitsBefore(90)
+		}
+	})
+
+	if respNew != respOld {
+		panic("wrong answers")
+	}
+}

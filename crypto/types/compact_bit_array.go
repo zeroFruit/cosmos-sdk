@@ -93,6 +93,16 @@ func (bA *CompactBitArray) NumTrueBitsBefore(index int) int {
 	}
 }
 
+func (bA *CompactBitArray) numTrueBitsBefore2(index int) int {
+	numTrueValues := 0
+	for i := 0; i < index; i++ {
+		if bA.GetIndex(i) {
+			numTrueValues++
+		}
+	}
+	return numTrueValues
+}
+
 // Copy returns a copy of the provided bit array.
 func (bA *CompactBitArray) Copy() *CompactBitArray {
 	if bA == nil {
