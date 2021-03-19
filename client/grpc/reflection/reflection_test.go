@@ -50,6 +50,12 @@ func (s IntegrationTestSuite) TestSimulateService() {
 	s.Require().Contains(resImpl.GetImplementationMessageNames(), "/cosmos.evidence.v1beta1.Equivocation")
 }
 
+func (s IntegrationTestSuite) TestGetAppDescriptor() {
+	desc, err := s.queryClient.GetAppDescriptor(context.Background(), nil)
+	s.Require().NoError(err)
+	s.T().Logf("%s", desc)
+}
+
 func TestSimulateTestSuite(t *testing.T) {
 	suite.Run(t, new(IntegrationTestSuite))
 }

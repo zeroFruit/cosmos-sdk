@@ -116,7 +116,20 @@
     - [Pair](#cosmos.base.kv.v1beta1.Pair)
     - [Pairs](#cosmos.base.kv.v1beta1.Pairs)
   
+- [cosmos/base/reflection/v1beta1/descriptor.proto](#cosmos/base/reflection/v1beta1/descriptor.proto)
+    - [AppDescriptor](#cosmos.base.reflection.v1beta1.AppDescriptor)
+    - [Codec](#cosmos.base.reflection.v1beta1.Codec)
+    - [Config](#cosmos.base.reflection.v1beta1.Config)
+    - [InterfaceDescriptor](#cosmos.base.reflection.v1beta1.InterfaceDescriptor)
+    - [InterfaceImplementer](#cosmos.base.reflection.v1beta1.InterfaceImplementer)
+    - [Message](#cosmos.base.reflection.v1beta1.Message)
+    - [Msg](#cosmos.base.reflection.v1beta1.Msg)
+    - [QueryService](#cosmos.base.reflection.v1beta1.QueryService)
+    - [ServiceMsg](#cosmos.base.reflection.v1beta1.ServiceMsg)
+  
 - [cosmos/base/reflection/v1beta1/reflection.proto](#cosmos/base/reflection/v1beta1/reflection.proto)
+    - [GetAppDescriptorRequest](#cosmos.base.reflection.v1beta1.GetAppDescriptorRequest)
+    - [GetAppDescriptorResponse](#cosmos.base.reflection.v1beta1.GetAppDescriptorResponse)
     - [ListAllInterfacesRequest](#cosmos.base.reflection.v1beta1.ListAllInterfacesRequest)
     - [ListAllInterfacesResponse](#cosmos.base.reflection.v1beta1.ListAllInterfacesResponse)
     - [ListImplementationsRequest](#cosmos.base.reflection.v1beta1.ListImplementationsRequest)
@@ -2008,10 +2021,203 @@ Pairs defines a repeated slice of Pair objects.
 
 
 
+<a name="cosmos/base/reflection/v1beta1/descriptor.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## cosmos/base/reflection/v1beta1/descriptor.proto
+
+
+
+<a name="cosmos.base.reflection.v1beta1.AppDescriptor"></a>
+
+### AppDescriptor
+AppDescriptor describes a cosmos sdk application
+in a way that it's possible for an external client
+to build the required components (codec, address encoding..)
+to query and send transactions to the described application.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `codec` | [Codec](#cosmos.base.reflection.v1beta1.Codec) |  | Codec describes the codec information regarding interface types and relative implementers it's required to provide type safety during marshalling and unmarshalling of anypb.Any types in a dynamic context. |
+| `config` | [Config](#cosmos.base.reflection.v1beta1.Config) |  | Config describes the sdk.Config of the application |
+| `query_services` | [QueryService](#cosmos.base.reflection.v1beta1.QueryService) | repeated | QueryServices provides a list of the exposed gRPC query services of modules |
+| `messages` | [Message](#cosmos.base.reflection.v1beta1.Message) | repeated | Messages provides a list of the messages that can be delivered to the application |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v1beta1.Codec"></a>
+
+### Codec
+Codec describes the application's codec
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `interfaces_descriptors` | [InterfaceDescriptor](#cosmos.base.reflection.v1beta1.InterfaceDescriptor) | repeated | interfaces_descriptors lists the registered interfaces descriptors |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v1beta1.Config"></a>
+
+### Config
+Config describes the application's sdk.Config
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `bech32_acc_address_prefix` | [string](#string) |  | bech32_acc_address_prefix defines the account address prefix |
+| `bech32_acc_pub_prefix` | [string](#string) |  | bech32_acc_pub_prefix defines the prefix of an account's public key |
+| `bech32_val_addr_prefix` | [string](#string) |  | bech32_val_addr_prefix defines the bech32 prefix of a validator's operator address |
+| `bech32_val_pub_prefix` | [string](#string) |  | bech32_val_pub_prefix defines the bech32 prefix of validator's operator public key |
+| `bech32_cons_addr_prefix` | [string](#string) |  | bech32_cons_addr_prefix defines the bech32 prefix of a consensus node address |
+| `bech32_cons_pub_prefix` | [string](#string) |  | bech32_cons_pub_prefix defines the bech32 prefix of a consensus node public key |
+| `purpose` | [uint32](#uint32) |  | purpose is the purpose as defined in SLIP44 |
+| `coin_type` | [uint32](#uint32) |  | coin_type returns the coin type as defined in SLIP44 |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v1beta1.InterfaceDescriptor"></a>
+
+### InterfaceDescriptor
+InterfaceDescriptor describes an interface
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  | name is the name of the interface |
+| `interface_implementers` | [InterfaceImplementer](#cosmos.base.reflection.v1beta1.InterfaceImplementer) | repeated | interface_implementers describes the interface implementers |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v1beta1.InterfaceImplementer"></a>
+
+### InterfaceImplementer
+InterfaceImplementer describes a type implementing an interface
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `full_name` | [string](#string) |  | full_name defines the concrete type's protobuf full name, package included. |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v1beta1.Message"></a>
+
+### Message
+Message describes a cosmos-sdk deliverable message
+it can be of type sdk.Msg or type sdk.ServiceMsg
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `msg` | [Msg](#cosmos.base.reflection.v1beta1.Msg) |  | msg is used to describe legacy sdk.Msg |
+| `service_msg` | [ServiceMsg](#cosmos.base.reflection.v1beta1.ServiceMsg) |  | service_msg is used to describe sdk.ServiceMsg |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v1beta1.Msg"></a>
+
+### Msg
+Msg describes an sdk.Msg
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `full_name` | [string](#string) |  | full_name defines the protobuf full name of the Msg, package included. |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v1beta1.QueryService"></a>
+
+### QueryService
+QueryService describes a query service
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `full_name` | [string](#string) |  | full_name is the full name of the query service, package included. |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v1beta1.ServiceMsg"></a>
+
+### ServiceMsg
+ServiceMsg describes an sdk.ServiceMsg
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `full_name` | [string](#string) |  | full_name defines the protobuf full name of the ServiceMsg, package included. |
+| `method_name` | [string](#string) |  | method_name defines the service msg's method name |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="cosmos/base/reflection/v1beta1/reflection.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
 ## cosmos/base/reflection/v1beta1/reflection.proto
+
+
+
+<a name="cosmos.base.reflection.v1beta1.GetAppDescriptorRequest"></a>
+
+### GetAppDescriptorRequest
+GetAppDescriptorRequest is the request type of the GetAppDescriptor RPC.
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v1beta1.GetAppDescriptorResponse"></a>
+
+### GetAppDescriptorResponse
+GetAppDescriptorResponse is the response type of the GetAppDescriptor RPC.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `app_descriptor` | [AppDescriptor](#cosmos.base.reflection.v1beta1.AppDescriptor) |  |  |
+
+
+
 
 
 
@@ -2085,6 +2291,7 @@ ReflectionService defines a service for interface reflection.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `GetAppDescriptor` | [GetAppDescriptorRequest](#cosmos.base.reflection.v1beta1.GetAppDescriptorRequest) | [GetAppDescriptorResponse](#cosmos.base.reflection.v1beta1.GetAppDescriptorResponse) | GetAppDescriptor gets the cosmos app descriptor | GET|/cosmos/base/reflection/v1beta1/app_descriptor|
 | `ListAllInterfaces` | [ListAllInterfacesRequest](#cosmos.base.reflection.v1beta1.ListAllInterfacesRequest) | [ListAllInterfacesResponse](#cosmos.base.reflection.v1beta1.ListAllInterfacesResponse) | ListAllInterfaces lists all the interfaces registered in the interface registry. | GET|/cosmos/base/reflection/v1beta1/interfaces|
 | `ListImplementations` | [ListImplementationsRequest](#cosmos.base.reflection.v1beta1.ListImplementationsRequest) | [ListImplementationsResponse](#cosmos.base.reflection.v1beta1.ListImplementationsResponse) | ListImplementations list all the concrete types that implement a given interface. | GET|/cosmos/base/reflection/v1beta1/interfaces/{interface_name}/implementations|
 

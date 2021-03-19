@@ -3,10 +3,16 @@ package cosmos.base.reflection.v1beta1;
 
 import "google/api/annotations.proto";
 
+import "cosmos/base/reflection/v1beta1/descriptor.proto";
+
 option go_package = "github.com/cosmos/cosmos-sdk/client/grpc/reflection";
 
 // ReflectionService defines a service for interface reflection.
 service ReflectionService {
+  // GetAppDescriptor gets the cosmos app descriptor
+  rpc GetAppDescriptor(GetAppDescriptorRequest) returns (GetAppDescriptorResponse) {
+    option (google.api.http).get = "/cosmos/base/reflection/v1beta1/app_descriptor";
+  };
   // ListAllInterfaces lists all the interfaces registered in the interface
   // registry.
   rpc ListAllInterfaces(ListAllInterfacesRequest) returns (ListAllInterfacesResponse) {
@@ -19,6 +25,14 @@ service ReflectionService {
     option (google.api.http).get = "/cosmos/base/reflection/v1beta1/interfaces/"
                                    "{interface_name}/implementations";
   };
+}
+
+// GetAppDescriptorRequest is the request type of the GetAppDescriptor RPC.
+message GetAppDescriptorRequest {}
+
+// GetAppDescriptorResponse is the response type of the GetAppDescriptor RPC.
+message GetAppDescriptorResponse {
+  AppDescriptor app_descriptor = 1;
 }
 
 // ListAllInterfacesRequest is the request type of the ListAllInterfaces RPC.
