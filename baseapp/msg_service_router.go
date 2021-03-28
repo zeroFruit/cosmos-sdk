@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // MsgServiceRouter routes fully-qualified Msg service methods to their handler.

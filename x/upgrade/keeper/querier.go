@@ -9,8 +9,8 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // NewQuerier creates a querier for upgrade cli and REST endpoints

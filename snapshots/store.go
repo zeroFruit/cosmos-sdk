@@ -13,8 +13,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	db "github.com/tendermint/tm-db"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/errors"
 	"github.com/cosmos/cosmos-sdk/snapshots/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 const (

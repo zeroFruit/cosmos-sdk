@@ -2,7 +2,7 @@ package v040
 
 import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	sdkerrors "github.com/cosmos/cosmos-sdk/errors"
 	v039auth "github.com/cosmos/cosmos-sdk/x/auth/legacy/v039"
 	v040auth "github.com/cosmos/cosmos-sdk/x/auth/types"
 	v040vesting "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"

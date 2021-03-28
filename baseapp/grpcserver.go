@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	sdkerrors "github.com/cosmos/cosmos-sdk/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 )
 

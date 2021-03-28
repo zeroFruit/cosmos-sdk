@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdkerrors "github.com/cosmos/cosmos-sdk/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	v036gov "github.com/cosmos/cosmos-sdk/x/gov/legacy/v036"
 )
 
