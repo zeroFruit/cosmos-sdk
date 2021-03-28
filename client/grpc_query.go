@@ -15,7 +15,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/errors"
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
+	grpctypes "github.com/cosmos/cosmos-sdk/grpc"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 )
 

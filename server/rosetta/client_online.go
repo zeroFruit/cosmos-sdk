@@ -22,8 +22,8 @@ import (
 	crgerrs "github.com/tendermint/cosmos-rosetta-gateway/errors"
 	crgtypes "github.com/tendermint/cosmos-rosetta-gateway/types"
 
+	grpctypes "github.com/cosmos/cosmos-sdk/grpc"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bank "github.com/cosmos/cosmos-sdk/x/bank/types"

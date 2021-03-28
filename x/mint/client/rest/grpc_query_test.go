@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"testing"
 
+	grpctypes "github.com/cosmos/cosmos-sdk/grpc"
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/suite"

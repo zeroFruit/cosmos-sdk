@@ -7,9 +7,9 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
+	grpctypes "github.com/cosmos/cosmos-sdk/grpc"
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/bank/types"

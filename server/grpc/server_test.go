@@ -16,10 +16,10 @@ import (
 	"google.golang.org/grpc/metadata"
 	rpb "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 
+	grpctypes "github.com/cosmos/cosmos-sdk/grpc"
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
 	banktestutil "github.com/cosmos/cosmos-sdk/x/bank/client/testutil"

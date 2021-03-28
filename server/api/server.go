@@ -15,9 +15,9 @@ import (
 	tmrpcserver "github.com/tendermint/tendermint/rpc/jsonrpc/server"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	grpctypes "github.com/cosmos/cosmos-sdk/grpc"
 	"github.com/cosmos/cosmos-sdk/server/config"
 	"github.com/cosmos/cosmos-sdk/telemetry"
-	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 
 	// unnamed import of statik for swagger UI support
