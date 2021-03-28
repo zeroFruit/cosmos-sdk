@@ -13,10 +13,10 @@ import (
 
 	"github.com/hashicorp/golang-lru/simplelru"
 
+	"github.com/cosmos/cosmos-sdk/address"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/errors"
 	"github.com/cosmos/cosmos-sdk/internal/conv"
-	"github.com/cosmos/cosmos-sdk/types/address"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 )
 

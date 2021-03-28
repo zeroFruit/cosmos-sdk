@@ -10,8 +10,8 @@ import (
 
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 
+	"github.com/cosmos/cosmos-sdk/address"
 	"github.com/cosmos/cosmos-sdk/errors"
-	"github.com/cosmos/cosmos-sdk/types/address"
 )
 
 // signature holds the r and s values of an ECDSA signature.
