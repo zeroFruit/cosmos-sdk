@@ -14,10 +14,10 @@ import (
 	"github.com/hashicorp/golang-lru/simplelru"
 
 	"github.com/cosmos/cosmos-sdk/address"
+	"github.com/cosmos/cosmos-sdk/bech32"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/errors"
 	"github.com/cosmos/cosmos-sdk/internal/conv"
-	"github.com/cosmos/cosmos-sdk/types/bech32"
 )
 
 const (

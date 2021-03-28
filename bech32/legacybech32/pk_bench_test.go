@@ -1,9 +1,11 @@
-package legacybech32
+package legacybech32_test
 
 import (
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/cosmos/cosmos-sdk/bech32/legacybech32"
 
 	"github.com/stretchr/testify/require"
 
@@ -42,7 +44,7 @@ func BenchmarkMarshalPubKey(b *testing.B) {
 		rng.Read(pk.Key)
 		b.StartTimer()
 
-		_, err := MarshalPubKey(ConsPK, pk)
+		_, err := legacybech32.MarshalPubKey("conspub", pk)
 		require.NoError(b, err)
 	}
 }
@@ -59,11 +61,11 @@ func BenchmarkGetPubKeyFromBech32(b *testing.B) {
 		b.StopTimer()
 		rng.Read(pk.Key)
 
-		pkStr, err := MarshalPubKey(ConsPK, pk)
+		pkStr, err := legacybech32.MarshalPubKey("conspub", pk)
 		require.NoError(b, err)
 
 		b.StartTimer()
-		pk2, err := UnmarshalPubKey(ConsPK, pkStr)
+		pk2, err := legacybech32.UnmarshalPubKey("conspub", pkStr)
 		require.NoError(b, err)
 		require.Equal(b, pk, pk2)
 	}

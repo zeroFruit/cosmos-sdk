@@ -4,10 +4,10 @@ package v036
 import (
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/bech32/legacybech32"
 	"github.com/cosmos/cosmos-sdk/codec/legacy"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
 	v034staking "github.com/cosmos/cosmos-sdk/x/staking/legacy/v034"
 )
 
