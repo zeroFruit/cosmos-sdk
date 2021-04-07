@@ -42,11 +42,14 @@ func (t typesRegistry) FindExtensionByNumber(message protoreflect.FullName, fiel
 }
 
 func (t typesRegistry) registerTypeURL(typeURL string, fullname protoreflect.FullName) error {
-	_, exists := t.typeURLs[typeURL]
-	if exists {
-		return fmt.Errorf("%s is already registered", typeURL)
+	gotFullname, exists := t.typeURLs[typeURL]
+	if !exists {
+		t.typeURLs[typeURL] = fullname
+		return nil
 	}
-	t.typeURLs[typeURL] = fullname
+	if gotFullname != fullname {
+		return fmt.Errorf("disallowed overwrite of typeURL with wrong proto type %s: %s <-> %s", typeURL, fullname, gotFullname)
+	}
 	return nil
 }
 

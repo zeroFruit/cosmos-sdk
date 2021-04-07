@@ -9,8 +9,6 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/runtime/protoimpl"
-
-	"github.com/cosmos/cosmos-sdk/rosetta/dynamic/codec"
 )
 
 type TypesRegistry interface {
@@ -55,7 +53,7 @@ func GetDependenciesFromBytesDescriptor(desc []byte) ([]string, error) {
 func BuildFileDescriptor(files FilesRegistry, types TypesRegistry, descBytes []byte) (fd protoreflect.FileDescriptor, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("%w: %#v", codec.ErrBuild, r)
+			err = fmt.Errorf("%v", r)
 		}
 	}()
 
@@ -65,6 +63,14 @@ func BuildFileDescriptor(files FilesRegistry, types TypesRegistry, descBytes []b
 		FileRegistry:  files,
 	}).Build().File
 	return fd, nil
+}
+
+func AllSymbolsFromRawDescBytes(rawDesc []byte) (symbols []protoreflect.FullName, fd protoreflect.FileDescriptor, err error) {
+	fd, err = BuildFileDescriptor(new(protoregistry.Files), new(protoregistry.Types), rawDesc)
+	if err != nil {
+		return nil, nil, err
+	}
+	return AllSymbolsFromFileDescriptor(fd), fd, nil
 }
 
 func AllSymbolsFromFileDescriptor(fd protoreflect.FileDescriptor) []protoreflect.FullName {

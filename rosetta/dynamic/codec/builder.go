@@ -24,10 +24,12 @@ type InterfaceDescriptor struct {
 }
 
 // ReflectionInfoProvider defines an interface which provides information
-// on the application we're trying to build the codec for
+// on the application we're trying to build the codec for.
+// NOTE: it's fine if ListMessages, ListInterfaceImplementations contain
+// messages which have already been parsed while calling ListServices.
 type ReflectionInfoProvider interface {
 	// ListMessages lists the proto.Messages which may not have been exposed
-	// when resolving proto.Messages from ListServices
+	// when resolving proto.Messages from ListServices.
 	ListMessages(ctx context.Context) ([]protoreflect.FullName, error)
 	// ListServices lists the services of the application
 	ListServices(ctx context.Context) ([]protoreflect.FullName, error)
@@ -37,16 +39,16 @@ type ReflectionInfoProvider interface {
 	ListInterfaceImplementations(ctx context.Context, interfaceName string) ([]InterfaceImplementer, error)
 }
 
-// ReflectionProtoFileRegistry defines an external protobuf registry
-// which we can use to fetch files and file's symbols
-type ReflectionProtoFileRegistry interface {
+// RemoteProtobufRegistry defines an external protobuf registry which we can use
+// to fetch files and files associated with a specific protoreflect.FullName
+type RemoteProtobufRegistry interface {
 	// FilepathFromFullName returns the path of a proto file given a protobuf declaration fullname
 	FilepathFromFullName(ctx context.Context, fullname protoreflect.FullName) (path string, err error)
 	// FileDescriptorBytes returns the descriptor bytes of a file given its path
 	FileDescriptorBytes(ctx context.Context, filepath string) (rawDesc []byte, err error)
 }
 
-func NewBuilder(infoProvider ReflectionInfoProvider, externalRegistry ReflectionProtoFileRegistry) *Builder {
+func NewBuilder(infoProvider ReflectionInfoProvider, externalRegistry RemoteProtobufRegistry) *Builder {
 	return &Builder{
 		ctx:              nil,
 		rip:              infoProvider,
@@ -64,7 +66,7 @@ type Builder struct {
 	ctx context.Context
 
 	rip              ReflectionInfoProvider
-	externalRegistry ReflectionProtoFileRegistry
+	externalRegistry RemoteProtobufRegistry
 
 	files *protoregistry.Files
 	types *typesRegistry
@@ -95,13 +97,14 @@ func (b *Builder) Build(ctx context.Context) (*Codec, error) {
 		return nil, err
 	}
 	return &Codec{
+		filesRegistry: b.files,
+		typeRegistry:  b.types,
 		jsonMarshaler: protojson.MarshalOptions{
 			Resolver: b.types,
 		},
 		jsonUnmarshaler: protojson.UnmarshalOptions{
 			Resolver: b.types,
 		},
-
 		protoMarshaler: proto.MarshalOptions{
 			Deterministic: true,
 		},
@@ -177,17 +180,27 @@ func (b *Builder) parseAnys() error {
 		for _, impl := range impls {
 			// check if protobuf message is already registered
 			_, err = b.types.FindMessageByName(impl.FullName)
-			if err != nil {
-				return fmt.Errorf("unable to assert message %s existence while registering interface %s: %w", impl.FullName, iface, err)
+			if err != nil && !errors.Is(err, protoregistry.NotFound) {
+				return fmt.Errorf("unknown types registry error while registering type %s for interface %s: %w", impl.FullName, iface.Name, err)
+			}
+			if errors.Is(err, protoregistry.NotFound) {
+				filepath, err := b.externalRegistry.FilepathFromFullName(b.ctx, impl.FullName)
+				if err != nil {
+					return fmt.Errorf("unable to find protofile for type %s for interface %s: %w", impl.FullName, iface.Name, err)
+				}
+				_, err = b.registerFile(filepath)
+				if err != nil {
+					return fmt.Errorf("unable to register protofile for type %s for interface %s: %w", impl.FullName, iface.Name, err)
+				}
 			}
 			// now register alias
 			err = b.types.registerTypeURL(impl.TypeURL, impl.FullName)
 			if err != nil {
-				return fmt.Errorf("unable to register type URL for %s while registering interface %s: %w", impl.FullName, iface, err)
+				return fmt.Errorf("unable to register type URL for %s while registering interface %s: %w", impl.FullName, iface.Name, err)
 			}
 		}
 	}
-	// TODO create type scoped proto/protojson.Marshal/UnmarshalOptions for messages which contain *anypb.Any fields
+	// TODO create message scoped proto/protojson.Marshal/UnmarshalOptions for messages which contain *anypb.Any fields
 	return nil
 }
 
@@ -200,6 +213,7 @@ func (b *Builder) registerFile(filepath string) (fd protoreflect.FileDescriptor,
 	}
 
 	// add filepath to check for cyclic importing; the execution of Build is atomic: it can either fail or be successful
+	// we can't have a partial successful state
 	b.parsedFiles[filepath] = struct{}{}
 
 	rawDesc, err := b.externalRegistry.FileDescriptorBytes(b.ctx, filepath)
@@ -237,12 +251,6 @@ func (b *Builder) registerFile(filepath string) (fd protoreflect.FileDescriptor,
 	if err != nil {
 		return nil, fmt.Errorf("unable to build descriptor: %w", err)
 	}
-	// and register it
-	err = b.files.RegisterFile(fd)
-	if err != nil {
-		return nil, fmt.Errorf("unable to register descriptor: %w", err)
-	}
-
 	err = b.types.registerFileDescriptorTypes(fd)
 	if err != nil {
 		return nil, fmt.Errorf("unable to register file descriptor types: %w", err)
