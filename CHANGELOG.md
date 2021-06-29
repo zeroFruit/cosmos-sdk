@@ -73,6 +73,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * [\#9457](https://github.com/cosmos/cosmos-sdk/pull/9457) Add amino support for x/authz and x/feegrant Msgs.
 * [\#9498](https://github.com/cosmos/cosmos-sdk/pull/9498) Added `Codec: codec.Codec` attribute to `client/Context` structure.
 * [\#9540](https://github.com/cosmos/cosmos-sdk/pull/9540) Add output flag for query txs command.
+* (x/authz)[\#8472](https://github.com/cosmos/cosmos-sdk/pull/8472) Add DelegateAuthorization, UndelegateAuthorization to x/authz module.
 
 ### Client Breaking Changes
 
@@ -290,6 +291,7 @@ he Cosmos Hub) should not use this release or any release in the v0.41.x series.
 * [\#8681](https://github.com/cosmos/cosmos-sdk/issues/8681) Fix missing error message when calling GetTxsEvent [\#8732](https://github.com/cosmos/cosmos-sdk/pull/8732)
 * (server) [\#8641](https://github.com/cosmos/cosmos-sdk/pull/8641) Fix Tendermint and application configuration reading from file
 * (client/keys) [\#8639] (https://github.com/cosmos/cosmos-sdk/pull/8639) Fix keys migrate for mulitisig, offline, and ledger keys. The migrate command now takes a positional old_home_dir argument.
+* (gRPC) [\8649] ((https://github.com/cosmos/cosmos-sdk/pull/8649)) Fix bug caused by quering gRPC gateway endpoint balances
 
 ### Improvements
 
@@ -742,7 +744,8 @@ falling below their minimum self-delegation and never having been bonded. The va
   * (types) \#6897 Add KV type from tendermint to `types` directory.
   * (version) [\#7848](https://github.com/cosmos/cosmos-sdk/pull/7848) [\#7941](https://github.com/cosmos/cosmos-sdk/pull/7941)
     `version --long` output now shows the list of build dependencies and replaced build dependencies.
-
+  * [\#7459](https://github.com/cosmos/cosmos-sdk/pull/7459)  Introduce a system for permissioned inter-module communication leveraging the protobuf Query and Msg service definitions defined in ADR 021 and ADR 031
+  
 ## [v0.39.1](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.39.1) - 2020-08-11
 
 ### Client Breaking
