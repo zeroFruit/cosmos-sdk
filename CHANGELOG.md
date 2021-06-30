@@ -40,6 +40,15 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Features
 
 * [\#9533](https://github.com/cosmos/cosmos-sdk/pull/9533) Added a new gRPC method, `DenomOwners`, in `x/bank` to query for all account holders of a specific denomination.
+* (x/authz)[\#8472](https://github.com/cosmos/cosmos-sdk/pull/8472) Add DelegateAuthorization, UndelegateAuthorization to x/authz module.
+* [\#8518](https://github.com/cosmos/cosmos-sdk/pull/8518) Help users of multisig wallets debug signature issues. 
+* [\#8512](https://github.com/cosmos/cosmos-sdk/pull/8512) Add support for searching for legacy Msgs and service Msgs
+* (x/bank)[\#8612](https://github.com/cosmos/cosmos-sdk/pull/8612) Add an additional test case when the display denom is the base denom
+* [\#8405](https://github.com/cosmos/cosmos-sdk/pull/8405) Modify IBC client governance unfreezing to reflect ADR changes
+* [\#8415](https://github.com/cosmos/cosmos-sdk/pull/8415) Introduce ADR-028 address generation algorithm and Extensible address format.
+* [\#8561](https://github.com/cosmos/cosmos-sdk/pull/8561) Add github action for atlas deployment
+* [\#8549](https://github.com/cosmos/cosmos-sdk/pull/8549) Make gRPC requests go through tendermint Query
+
 
 ### API Breaking Changes
 
@@ -54,6 +63,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Improvements
 * (cli) [\#9593](https://github.com/cosmos/cosmos-sdk/pull/9593) Check if chain-id is blank before verifying signatures in multisign and error.
+
+### Bug fixes
+* (x/gov/types) [\#8586](https://github.com/cosmos/cosmos-sdk/pull/8586) Fix bug caused by NewProposal that unnecessarily creates a Proposal object that’s discarded on any error.
+* [\#8580] (https://github.com/cosmos/cosmos-sdk/pull/8580) Use more cheaper method from the math/big package that provides a way to trivially check if a value is zero with .BitLen() == 0
+* [\#8567] (https://github.com/cosmos/cosmos-sdk/pull/8567) Fix bug by introducing pagination to GetValidatorSetByHeight response
+
 
 ## [v0.43.0-rc0](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.43.0-rc0) - 2021-06-25
 
@@ -73,7 +88,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * [\#9457](https://github.com/cosmos/cosmos-sdk/pull/9457) Add amino support for x/authz and x/feegrant Msgs.
 * [\#9498](https://github.com/cosmos/cosmos-sdk/pull/9498) Added `Codec: codec.Codec` attribute to `client/Context` structure.
 * [\#9540](https://github.com/cosmos/cosmos-sdk/pull/9540) Add output flag for query txs command.
-* (x/authz)[\#8472](https://github.com/cosmos/cosmos-sdk/pull/8472) Add DelegateAuthorization, UndelegateAuthorization to x/authz module.
+
+
 
 ### Client Breaking Changes
 
@@ -168,6 +184,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (x/auth) [\#9553](https://github.com/cosmos/cosmos-sdk/pull/9553) The `--multisig` flag now accepts both a name and address.
 * (baseapp) [\#9578](https://github.com/cosmos/cosmos-sdk/pull/9578) Return `Baseapp`'s `trace` value for logging error stack traces.
 
+
+
 ### Bug Fixes
 
 * [\#9454](https://github.com/cosmos/cosmos-sdk/pull/9454) Fix testnet command with --node-dir-prefix accepts `-` and change `node-dir-prefix token` to `testtoken`.
@@ -182,6 +200,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (types) [\#9511](https://github.com/cosmos/cosmos-sdk/pull/9511) Change `maxBitLen` of `sdk.Int` and `sdk.Dec`  to handle max ERC20 value.
 * (keyring) [\#9562](https://github.com/cosmos/cosmos-sdk/pull/9563) fix keyring kwallet backend when using with empty wallet.
 * (keyring) [\#9583](https://github.com/cosmos/cosmos-sdk/pull/9583) Fix correct population of legacy `Vote.Option` field for votes with 1 VoteOption of weight 1.
+* (x/gov/simulation) [\#8603](https://github.com/cosmos/cosmos-sdk/pull/8603) Fix correct population of legacy `Vote.Option` field for votes with 1 VoteOption of weight 1.
+
+
+
 
 ### Deprecated
 
@@ -291,7 +313,8 @@ he Cosmos Hub) should not use this release or any release in the v0.41.x series.
 * [\#8681](https://github.com/cosmos/cosmos-sdk/issues/8681) Fix missing error message when calling GetTxsEvent [\#8732](https://github.com/cosmos/cosmos-sdk/pull/8732)
 * (server) [\#8641](https://github.com/cosmos/cosmos-sdk/pull/8641) Fix Tendermint and application configuration reading from file
 * (client/keys) [\#8639] (https://github.com/cosmos/cosmos-sdk/pull/8639) Fix keys migrate for mulitisig, offline, and ledger keys. The migrate command now takes a positional old_home_dir argument.
-* (gRPC) [\8649] ((https://github.com/cosmos/cosmos-sdk/pull/8649)) Fix bug caused by quering gRPC gateway endpoint balances
+* (gRPC) [\8649] (https://github.com/cosmos/cosmos-sdk/pull/8649) Fix bug caused by quering gRPC gateway endpoint balances
+* [\8643] (https://github.com/cosmos/cosmos-sdk/pull/8643) Fix bug caused by the wrong filename (app.toml)
 
 ### Improvements
 
