@@ -28,7 +28,6 @@ Moreover, module developers often face other questions around Protobuf definitio
 We decide to keep [Buf's](https://docs.buf.build/) recommendations with the following exceptions:
 
 - `UNARY_RPC`: the SDK currently does not support streaming RPCs.
-- `COMMENT_FIELD`: the SDK allows fields with no comments.
 - `SERVICE_SUFFIX`: we use the `Query` and `Msg` service naming convention, which doesn't use the `-Service` suffix.
 - `PACKAGE_VERSION_SUFFIX`: some packages, such as `cosmos.crypto.ed25519`, don't use a version suffix.
 - `RPC_REQUEST_STANDARD_NAME`: Requests for the `Msg` service don't have the `-Request` suffix to keep backwards compatibility.
