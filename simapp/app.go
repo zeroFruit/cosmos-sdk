@@ -261,6 +261,7 @@ func NewSimApp(
 
 	app.FeeGrantKeeper = feegrantkeeper.NewKeeper(appCodec, keys[feegrant.StoreKey], app.AccountKeeper)
 	app.UpgradeKeeper = upgradekeeper.NewKeeper(skipUpgradeHeights, keys[upgradetypes.StoreKey], appCodec, homePath, app.BaseApp)
+	app.registerUpgradeHandlers()
 
 	// register the staking hooks
 	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
@@ -584,4 +585,31 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(crisistypes.ModuleName)
 
 	return paramsKeeper
+}
+
+func (app *SimApp) registerUpgradeHandlers() {
+	// This is the upgrade plan name we used in the gov proposal.
+	upgradeName := "v0.44-v0.45-upgrade"
+	app.UpgradeKeeper.SetUpgradeHandler(upgradeName, func(ctx sdk.Context, plan upgradetypes.Plan, _ module.VersionMap) (module.VersionMap, error) {
+		fromVM := map[string]uint64{
+			"auth":         auth.AppModule{}.ConsensusVersion(),
+			"bank":         bank.AppModule{}.ConsensusVersion(),
+			"capability":   capability.AppModule{}.ConsensusVersion(),
+			"crisis":       crisis.AppModule{}.ConsensusVersion(),
+			"distribution": distr.AppModule{}.ConsensusVersion(),
+			"evidence":     evidence.AppModule{}.ConsensusVersion(),
+			"gov":          gov.AppModule{}.ConsensusVersion(),
+			"mint":         mint.AppModule{}.ConsensusVersion(),
+			"params":       params.AppModule{}.ConsensusVersion(),
+			"slashing":     slashing.AppModule{}.ConsensusVersion(),
+			"staking":      staking.AppModule{}.ConsensusVersion(),
+			"upgrade":      upgrade.AppModule{}.ConsensusVersion(),
+			"vesting":      vesting.AppModule{}.ConsensusVersion(),
+			"genutil":      genutil.AppModule{}.ConsensusVersion(),
+			"authz":        authzmodule.AppModule{}.ConsensusVersion(),
+			"feegrant":     feegrantmodule.AppModule{}.ConsensusVersion(),
+		}
+
+		return app.mm.RunMigrations(ctx, app.configurator, fromVM)
+	})
 }
