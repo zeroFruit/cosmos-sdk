@@ -13,6 +13,22 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/group/internal/math"
 )
 
+// Group message types and routes
+const (
+	TypeMsgCreateGroup                     = "create_group"
+	TypeMsgUpdateGroupAdmin                = "update_group_admin"
+	TypeMsgUpdateGroupMetadata             = "update_group_metadata"
+	TypeMsgUpdateGroupMembers              = "update_group_members"
+	TypeMsgCreateGroupWithPolicy           = "create_group_with_policy"
+	TypeMsgCreateGroupPolicy               = "create_group_policy"
+	TypeMsgUpdateGroupPolicyAdmin          = "update_group_policy_admin"
+	TypeMsgUpdateGroupPolicyDecisionPolicy = "update_group_policy_decision_policy"
+	TypeMsgUpdateGroupPolicyMetadata       = "update_group_policy_metadata"
+	TypeMsgCreateProposal                  = "create_proposal"
+	TypeMsgVote                            = "vote"
+	TypeMsgExec                            = "exec"
+)
+
 var _ sdk.Msg = &MsgCreateGroup{}
 
 // Route Implements Msg.
