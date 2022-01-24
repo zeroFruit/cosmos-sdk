@@ -118,6 +118,29 @@ func (p *ThresholdDecisionPolicy) Validate(g GroupInfo) error {
 	return nil
 }
 
+var _ orm.Validateable = GroupWithPolicyInfo{}
+
+// NewGroupWithPolicyInfo creates a new GroupWithPolicyInfo instance
+func NewGroupWithPolicyInfo(groupId uint64, admin sdk.AccAddress, groupPolicyAddr sdk.AccAddress, groupMetadata []byte,
+	groupPolicyMetadata []byte, totalWeight string, version uint64, decisionPolicy DecisionPolicy, createdAt time.Time) (GroupWithPolicyInfo, error) {
+	p := GroupWithPolicyInfo{
+		GroupId:             groupId,
+		Admin:               admin.String(),
+		GroupPolicyAddress:  groupPolicyAddr.String(),
+		GroupMetadata:       groupMetadata,
+		GroupPolicyMetadata: groupPolicyMetadata,
+		TotalWeight:         totalWeight,
+		Version:             version,
+		CreatedAt:           createdAt,
+	}
+
+	err := p.SetDecisionPolicy(decisionPolicy)
+	if err != nil {
+		return GroupWithPolicyInfo{}, err
+	}
+	return p, nil
+}
+
 var _ orm.Validateable = GroupPolicyInfo{}
 
 // NewGroupPolicyInfo creates a new GroupPolicyInfo instance
@@ -186,6 +209,60 @@ func (g GroupInfo) ValidateBasic() error {
 	}
 	if g.Version == 0 {
 		return sdkerrors.Wrap(errors.ErrEmpty, "version")
+	}
+	return nil
+}
+
+func (g GroupWithPolicyInfo) PrimaryKeyFields() []interface{} {
+	addr, err := sdk.AccAddressFromBech32(g.GroupPolicyAddress)
+	if err != nil {
+		panic(err)
+	}
+	return []interface{}{g.GroupId, addr.Bytes()}
+}
+
+func (g *GroupWithPolicyInfo) SetDecisionPolicy(decisionPolicy DecisionPolicy) error {
+	msg, ok := decisionPolicy.(proto.Message)
+	if !ok {
+		return fmt.Errorf("can't proto marshal %T", msg)
+	}
+	any, err := codectypes.NewAnyWithValue(msg)
+	if err != nil {
+		return err
+	}
+	g.DecisionPolicy = any
+	return nil
+}
+
+func (g GroupWithPolicyInfo) GetDecisionPolicy() DecisionPolicy {
+	decisionPolicy, ok := g.DecisionPolicy.GetCachedValue().(DecisionPolicy)
+	if !ok {
+		return nil
+	}
+	return decisionPolicy
+}
+
+func (g GroupWithPolicyInfo) ValidateBasic() error {
+	_, err := sdk.AccAddressFromBech32(g.Admin)
+	if err != nil {
+		return sdkerrors.Wrap(err, "group with policy admin")
+	}
+	_, err = sdk.AccAddressFromBech32(g.GroupPolicyAddress)
+	if err != nil {
+		return sdkerrors.Wrap(err, "group with policy account address")
+	}
+	if g.GroupId == 0 {
+		return sdkerrors.Wrap(errors.ErrEmpty, "group with policy's group id")
+	}
+	if g.Version == 0 {
+		return sdkerrors.Wrap(errors.ErrEmpty, "group with policy's version")
+	}
+	policy := g.GetDecisionPolicy()
+	if policy == nil {
+		return sdkerrors.Wrap(errors.ErrEmpty, "group policy's decision policy")
+	}
+	if err := policy.ValidateBasic(); err != nil {
+		return sdkerrors.Wrap(err, "group policy's decision policy")
 	}
 	return nil
 }

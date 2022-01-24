@@ -13,6 +13,22 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/group/internal/math"
 )
 
+// Group message types and routes
+const (
+	TypeMsgCreateGroup                     = "create_group"
+	TypeMsgUpdateGroupAdmin                = "update_group_admin"
+	TypeMsgUpdateGroupMetadata             = "update_group_metadata"
+	TypeMsgUpdateGroupMembers              = "update_group_members"
+	TypeMsgCreateGroupWithPolicy           = "create_group_with_policy"
+	TypeMsgCreateGroupPolicy               = "create_group_policy"
+	TypeMsgUpdateGroupPolicyAdmin          = "update_group_policy_admin"
+	TypeMsgUpdateGroupPolicyDecisionPolicy = "update_group_policy_decision_policy"
+	TypeMsgUpdateGroupPolicyMetadata       = "update_group_policy_metadata"
+	TypeMsgCreateProposal                  = "create_proposal"
+	TypeMsgVote                            = "vote"
+	TypeMsgExec                            = "exec"
+)
+
 var _ sdk.Msg = &MsgCreateGroup{}
 
 // Route Implements Msg.
@@ -222,6 +238,128 @@ func (m MsgUpdateGroupMembers) ValidateBasic() error {
 
 func (m *MsgUpdateGroupMembers) GetGroupID() uint64 {
 	return m.GroupId
+}
+
+var _ sdk.Msg = &MsgCreateGroupWithPolicy{}
+var _ types.UnpackInterfacesMessage = MsgCreateGroupWithPolicy{}
+
+// NewMsgCreateGroupWithPolicy creates a new MsgCreateGroupWithPolicy.
+func NewMsgCreateGroupWithPolicy(admin string, members []Member, group_metadata []byte, group_policy_metadata []byte, groupPolicyAsAdmin bool, decisionPolicy DecisionPolicy) (*MsgCreateGroupWithPolicy, error) {
+	m := &MsgCreateGroupWithPolicy{
+		Admin:               admin,
+		Members:             members,
+		GroupMetadata:       group_metadata,
+		GroupPolicyMetadata: group_policy_metadata,
+		GroupPolicyAsAdmin:  groupPolicyAsAdmin,
+	}
+	err := m.SetDecisionPolicy(decisionPolicy)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (m *MsgCreateGroupWithPolicy) GetAdmin() string {
+	return m.Admin
+}
+
+func (m *MsgCreateGroupWithPolicy) GetGroupMetadata() []byte {
+	return m.GroupMetadata
+}
+
+func (m *MsgCreateGroupWithPolicy) GetGroupPolicyMetadata() []byte {
+	return m.GroupPolicyMetadata
+}
+
+func (m *MsgCreateGroupWithPolicy) GetGroupPolicyAsAdmin() bool {
+	return m.GroupPolicyAsAdmin
+}
+
+func (m *MsgCreateGroupWithPolicy) GetDecisionPolicy() DecisionPolicy {
+	decisionPolicy, ok := m.DecisionPolicy.GetCachedValue().(DecisionPolicy)
+	if !ok {
+		return nil
+	}
+	return decisionPolicy
+}
+
+func (m *MsgCreateGroupWithPolicy) SetDecisionPolicy(decisionPolicy DecisionPolicy) error {
+	msg, ok := decisionPolicy.(proto.Message)
+	if !ok {
+		return fmt.Errorf("can't proto marshal %T", msg)
+	}
+	any, err := types.NewAnyWithValue(msg)
+	if err != nil {
+		return err
+	}
+	m.DecisionPolicy = any
+	return nil
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
+func (m MsgCreateGroupWithPolicy) UnpackInterfaces(unpacker types.AnyUnpacker) error {
+	var decisionPolicy DecisionPolicy
+	return unpacker.UnpackAny(m.DecisionPolicy, &decisionPolicy)
+}
+
+// Route Implements Msg.
+func (m MsgCreateGroupWithPolicy) Route() string { return RouterKey }
+
+// Type Implements Msg.
+func (m MsgCreateGroupWithPolicy) Type() string { return TypeMsgCreateGroupWithPolicy }
+
+// GetSignBytes Implements Msg.
+func (m MsgCreateGroupWithPolicy) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
+}
+
+// GetSigners returns the expected signers for a MsgCreateGroupWithPolicy.
+func (m MsgCreateGroupWithPolicy) GetSigners() []sdk.AccAddress {
+	admin, err := sdk.AccAddressFromBech32(m.Admin)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{admin}
+}
+
+// ValidateBasic does a sanity check on the provided data
+func (m MsgCreateGroupWithPolicy) ValidateBasic() error {
+	_, err := sdk.AccAddressFromBech32(m.Admin)
+	if err != nil {
+		return sdkerrors.Wrap(err, "admin")
+	}
+	policy := m.GetDecisionPolicy()
+	if policy == nil {
+		return sdkerrors.Wrap(errors.ErrEmpty, "decision policy")
+	}
+	if err := policy.ValidateBasic(); err != nil {
+		return sdkerrors.Wrap(err, "decision policy")
+	}
+
+	return m.validateMembers()
+}
+
+func (m MsgCreateGroupWithPolicy) validateMembers() error {
+	index := make(map[string]struct{}, len(m.Members))
+	for i := range m.Members {
+		member := m.Members[i]
+		_, err := sdk.AccAddressFromBech32(member.Address)
+		if err != nil {
+			return sdkerrors.Wrap(err, "address")
+		}
+
+		if _, err := math.NewPositiveDecFromString(member.Weight); err != nil {
+			return sdkerrors.Wrap(err, "weight")
+		}
+
+		addr := member.Address
+		if _, exists := index[addr]; exists {
+			return sdkerrors.Wrapf(errors.ErrDuplicate, "address: %s", addr)
+		}
+		index[addr] = struct{}{}
+	}
+
+	return nil
 }
 
 var _ sdk.Msg = &MsgCreateGroupPolicy{}
